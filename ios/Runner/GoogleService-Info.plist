@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>1070745137431-oifo0r2cikeg848k7sa395it4b0cb9gq.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1070745137431-oifo0r2cikeg848k7sa395it4b0cb9gq</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>1070745137431-8k2qsr22onu0p1m9jrs9gfmrrhpje46i.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCUhhJfUMBec1780ASTMwt8JQhYbwXg1xs</string>
+	<key>GCM_SENDER_ID</key>
+	<string>1070745137431</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.newspepper.app</string>
+	<key>PROJECT_ID</key>
+	<string>newspepper-b7b61</string>
+	<key>STORAGE_BUCKET</key>
+	<string>newspepper-b7b61.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:1070745137431:ios:65400144ef1357cc488752</string>
+</dict>
+</plist>

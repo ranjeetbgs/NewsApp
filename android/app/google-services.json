@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1070745137431",
+    "project_id": "newspepper-b7b61",
+    "storage_bucket": "newspepper-b7b61.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1070745137431:android:68691ef49027697c488752",
+        "android_client_info": {
+          "package_name": "com.newspepper.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1070745137431-8k2qsr22onu0p1m9jrs9gfmrrhpje46i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.newspepper.app",
+            "certificate_hash": "c9006cf914a93c6f3adb5d22a4229b00c6416c39"
+          }
+        },
+        {
+          "client_id": "1070745137431-e610p79agbv9it14n6pnmf5k3t4k5p9l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBajE73yo6sTz5c7yrcLf5FFDuCZtBKcXs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1070745137431-e610p79agbv9it14n6pnmf5k3t4k5p9l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
