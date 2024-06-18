@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:incite/api_controller/blog_controller.dart';
+import 'package:incite/api_controller/manage_local.dart';
 import 'package:incite/api_controller/user_controller.dart';
 import 'package:incite/model/home.dart';
 import 'package:incite/pages/main/widgets/quotes.dart';
@@ -89,7 +90,6 @@ class _BlogWrapPageState extends State<BlogWrapPage> with AutomaticKeepAliveClie
       } else if (blogListHolder.blogType == BlogType.featured) {
         widget.preloadPageController!.jumpToPage(widget.index);
       }
-      notificationListener = (manageNotifications);
       if (appLaunchResult != null) {
         manageNotifications(appLaunchResult!).then((v) {
           appLaunchResult = null;
@@ -108,6 +108,14 @@ class _BlogWrapPageState extends State<BlogWrapPage> with AutomaticKeepAliveClie
     // cur = blogListHolder.getIndex();
   }
 
+  updateLocals(String url) async {
+    var result = await http.get(
+      Uri.parse(url),
+    );
+    log("Got info....     ${result.body}");
+    ManageLocalData.saveToLocal(key: url, value: result.body);
+  }
+
   Future manageNotifications(OSNotificationClickEvent result) async {
     log("Got Push Notification.........      ${result.notification.title}");
     log("Got Push Notification.........      ${result.notification.body}");
@@ -122,15 +130,29 @@ class _BlogWrapPageState extends State<BlogWrapPage> with AutomaticKeepAliveClie
     if (blog != null) {
       try {
         provider.setNotificationLoading(true);
+
+        String? ress;
+
         var url = "${Urls.baseUrl}blog-detail/$blog";
-        var result = await http.get(
-          Uri.parse(url),
-        );
-        log("Got info....     ${result.body}");
+
+        final localNewsData = await ManageLocalData.getFromLocal(url);
+        if (localNewsData != null) {
+          ress = localNewsData;
+          updateLocals(url);
+          log("Got From Local......  ");
+        } else {
+          var result = await http.get(
+            Uri.parse(url),
+          );
+          log("Got info....     ${result.body}");
+          ManageLocalData.saveToLocal(key: url, value: result.body);
+          ress = result.body;
+        }
         // if(result.statusCode == 200) {
         //   ManageLocalData.saveToLocal(key: url, value: result.body);
         // }
-        Map data = await json.decode(result.body);
+
+        Map data = await json.decode(ress);
         if (data['success'] == true) {
           final list = Blog.fromJson(data['data'], isNotification: true);
           // print(list.type);
@@ -151,6 +173,7 @@ class _BlogWrapPageState extends State<BlogWrapPage> with AutomaticKeepAliveClie
             if (mounted) {
               setState(() {});
             }
+            Navigator.pop(context);
             navkey.currentState!.pushNamed('/BlogWrap', arguments: [
               0,
               false,
@@ -166,25 +189,21 @@ class _BlogWrapPageState extends State<BlogWrapPage> with AutomaticKeepAliveClie
             if (buttons.isNotEmpty && action == 'Bookmark') {
               updateBlogList(list, provider);
               provider.setNotificationLoading(false);
-              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
                 navkey.currentState!.pushNamed('/BlogWrap',
                     arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.bookmark, true]);
-              });
             } else if (buttons.isNotEmpty && action == 'Share') {
               updateBlogList(list, provider);
               provider.setNotificationLoading(false);
-              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
                 navkey.currentState!.pushNamed('/BlogWrap',
                     arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.share, true]);
-              });
+
             } else {
               // ignore: use_build_context_synchronously
               updateBlogList(list, provider);
               provider.setNotificationLoading(false);
-              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
                 navkey.currentState!.pushNamed('/BlogWrap',
                     arguments: [0, false, PreloadPageController(), "noti${list.id}", null, true]);
-              });
+
             }
           }
         }
@@ -399,7 +418,6 @@ class _BlogWrapPageState extends State<BlogWrapPage> with AutomaticKeepAliveClie
                         value % 9 == 0 &&
                         blogListHolder.getList().nextPageUrl != null &&
                         provider.calledPageurl != blogListHolder.getList().lastPageUrl) {
-
                       getLatestCategory(nextpageurl: blogListHolder.getList().nextPageUrl ?? '', provider: provider);
                     }
 
@@ -650,7 +668,6 @@ class _BlogWrapPageState extends State<BlogWrapPage> with AutomaticKeepAliveClie
                     value % 9 == 0 &&
                     blogListHolder.getList().nextPageUrl != null &&
                     provider.calledPageurl != blogListHolder.getList().lastPageUrl) {
-
                   getLatestCategory(nextpageurl: blogListHolder.getList().nextPageUrl ?? '', provider: provider);
                 }
 

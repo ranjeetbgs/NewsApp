@@ -1,18 +1,27 @@
+import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:incite/api_controller/blog_controller.dart';
 import 'package:incite/api_controller/user_controller.dart';
 import 'package:incite/utils/theme_util.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:provider/provider.dart';
 import '../../api_controller/app_provider.dart';
+import '../../api_controller/manage_local.dart';
+import '../../main.dart';
 import '../../model/blog.dart';
 import '../../splash_screen.dart';
+import '../../urls/url.dart';
 import '../../utils/image_util.dart';
 import 'blog.dart';
 import 'blog_wrap.dart';
 import 'home.dart';
+import 'package:http/http.dart' as http;
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key, this.index = 0});
@@ -43,10 +52,157 @@ class _DashboardPageState extends State<DashboardPage>
           provider.setAllBookmarks();
         }
       }
+
+      notificationListener = (manageNotifications);
+      if (appLaunchResult != null) {
+        manageNotifications(appLaunchResult!).then((v) {
+          appLaunchResult = null;
+        });
+      }
     });
 
     controller = PageController(initialPage: widget.index);
     super.initState();
+  }
+
+  updateLocals(String url) async {
+    var result = await http.get(
+      Uri.parse(url),
+    );
+    log("Got info....     ${result.body}");
+    ManageLocalData.saveToLocal(key: url, value: result.body);
+  }
+
+  Future manageNotifications(OSNotificationClickEvent result) async {
+    log("Got Push Notification.........      ${result.notification.title}");
+    log("Got Push Notification.........      ${result.notification.body}");
+    log("Got Push Notification.........      ${result.notification.rawPayload}");
+    log("Got Push Notification.........      ${result.notification.buttons}");
+    final blog = json.decode(result.notification.rawPayload!['custom'].toString())['a']['blog'];
+    final buttons = result.notification.buttons!.toList();
+    final action = result.notification.rawPayload!['actionId'];
+    //  WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+    var provider = Provider.of<AppProvider>(context, listen: false);
+
+    if (blog != null) {
+      try {
+        provider.setNotificationLoading(true);
+
+        String ress;
+        var url = "${Urls.baseUrl}blog-detail/$blog";
+
+        final localNewsData = await ManageLocalData.getFromLocal(url);
+        if(localNewsData != null){
+          ress = localNewsData;
+          updateLocals(url);
+          log("Got From Local......  ");
+        } else {
+          var result = await http.get(
+            Uri.parse(url),
+          );
+          log("Got info....     ${result.body}");
+          ManageLocalData.saveToLocal(key: url, value: result.body);
+          ress = result.body;
+        }
+
+
+        // var url = "${Urls.baseUrl}blog-detail/$blog";
+        // var result = await http.get(
+        //   Uri.parse(url),
+        // );
+        // log("Got info....     ${result.body}");
+        // if(result.statusCode == 200) {
+        //   ManageLocalData.saveToLocal(key: url, value: result.body);
+        // }
+
+
+
+
+
+
+        Map data = await json.decode(ress);
+        if (data['success'] == true) {
+          final list = Blog.fromJson(data['data'], isNotification: true);
+          // print(list.type);
+
+          if (list.type == 'quote') {
+            var data = provider.allNews!.blogs;
+            provider.allNews!.blogs = [];
+            provider.allNews!.blogs.add(list);
+            if (data.isNotEmpty && data.contains(list)) {
+              data.remove(list);
+            }
+            provider.allNews!.blogs.addAll(data);
+            blogListHolder.clearList();
+            blogListHolder.setBlogType(BlogType.allnews);
+            blogListHolder.setList(provider.allNews as DataModel);
+            provider.updateUI();
+            provider.setNotificationLoading(false);
+            if (mounted) {
+              setState(() {});
+            }
+            navkey.currentState!.pushNamed('/BlogWrap', arguments: [
+              0,
+              false,
+              PreloadPageController(),
+              "noti${list.id}",
+              action == 'Share' ? BlogOptionType.share : null,
+              true
+            ]);
+          } else {
+            if (list.images!.isNotEmpty) {
+              await precacheImage(CachedNetworkImageProvider(list.images![0]), context);
+            }
+            if (buttons.isNotEmpty && action == 'Bookmark') {
+              updateBlogList(list, provider);
+              provider.setNotificationLoading(false);
+              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                navkey.currentState!.pushNamed('/BlogWrap',
+                    arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.bookmark, true]);
+              });
+            } else if (buttons.isNotEmpty && action == 'Share') {
+              updateBlogList(list, provider);
+              provider.setNotificationLoading(false);
+              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                navkey.currentState!.pushNamed('/BlogWrap',
+                    arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.share, true]);
+              });
+            } else {
+              // ignore: use_build_context_synchronously
+              updateBlogList(list, provider);
+              provider.setNotificationLoading(false);
+              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                navkey.currentState!.pushNamed('/BlogWrap',
+                    arguments: [0, false, PreloadPageController(), "noti${list.id}", null, true]);
+              });
+            }
+          }
+        }
+
+        provider.setNotificationLoading(false);
+      } on Exception catch (e) {
+        provider.setNotificationLoading(false);
+
+        if (kDebugMode) {
+          print(e.toString());
+        }
+      }
+    }
+  }
+
+  void updateBlogList(Blog newBlog, AppProvider provider) {
+    var data = provider.allNews!.blogs;
+    provider.allNews!.blogs = [];
+    provider.allNews!.blogs.add(newBlog);
+    if (data.isNotEmpty && data.contains(newBlog)) {
+      data.remove(newBlog);
+    }
+    provider.allNews!.blogs.addAll(data);
+    blogListHolder.clearList();
+    blogListHolder.setList(provider.allNews as DataModel);
+    blogListHolder.setBlogType(BlogType.allnews);
+    provider.updateUI();
+    setState(() {});
   }
 
   @override

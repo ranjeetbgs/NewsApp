@@ -108,7 +108,6 @@ class QuestionModel {
   }
 }
 
-
 class Blog {
   int? id;
   String? type;
@@ -130,123 +129,118 @@ class Blog {
   String? categoryColor;
   int? isBookmark;
   int? isUserViewed;
-  List? visibilities;
+  List<dynamic>? visibilities;
   int? frequency;
-  String? mediaType,media,imageUrl;
+  String? mediaType;
+  String? media;
+  String? imageUrl;
   QuestionModel? question;
-  List? images;
+  List<dynamic>? images;
   PostType? postType;
   List<BlogSubCategory>? blogSubCategory;
   String? categoryName;
-  Uint8List? audioData; 
- 
+  Uint8List? audioData;
 
   Blog({
-      this.id,
-      this.frequency,
-      this.type,
-      this.title,
-      this.description,
-      this.sourceName,
-      this.sourceLink,
-      this.voice,
-      this.isFeatured,
-      this.accentCode,
-      this.videoUrl,
-      this.isVotingEnable,
-      this.scheduleDate,
-      this.createdAt,
-      this.updatedAt,
-      this.postType,
-      this.backgroundImage,
-      this.isFeed,
-      this.categoryName,
-      this.isVote,
-      this.isBookmark,
-      this.isUserViewed,
-      this.visibilities,
-      this.question,
-      this.images,
-      this.categoryColor,
-      this.mediaType,
-      this.media,
-      this.audioData,
-      this.blogSubCategory
+    this.id,
+    this.type,
+    this.title,
+    this.description,
+    this.sourceName,
+    this.sourceLink,
+    this.voice,
+    this.accentCode,
+    this.videoUrl,
+    this.isVotingEnable,
+    this.scheduleDate,
+    this.createdAt,
+    this.updatedAt,
+    this.backgroundImage,
+    this.isFeed,
+    this.isVote,
+    this.isFeatured,
+    this.categoryColor,
+    this.isBookmark,
+    this.isUserViewed,
+    this.visibilities,
+    this.frequency,
+    this.mediaType,
+    this.media,
+    this.imageUrl,
+    this.question,
+    this.images,
+    this.postType,
+    this.blogSubCategory,
+    this.categoryName,
+    this.audioData,
   });
 
-
-  Blog.fromJson(Map<String, dynamic> json,{isNotification = false,isCache = false,isAds=false}) {
+  Blog.fromJson(Map<String, dynamic> json, {bool isNotification = false, bool isCache = false, bool isAds = false}) {
     id = json['id'] ?? 0;
-    type = json['type']?? 'post';
-    title = json['title']??'';
-    description =  isAds==true ? '' : json['description'] ?? '';
-    sourceName =  json['source_name'];
-    sourceLink = json['source_link']??'';
-    isFeatured = json['is_featured'];
-    if (allSettings.value.isVoiceEnabled == true && allSettings.value.googleApikey != null) {
-         audioData = json['audioData'];
-    }
-    voice = isAds==true ? '' : json['voice']??'';
-    imageUrl = isAds==true ? json["image_url"] ?? '': null;
-    mediaType = isAds==true ?json["media_type"] ?? '': null;
-    media  = isAds==true ? json["media"] ?? '': null;
-    accentCode = isAds==true ? '' :json['accent_code']??'en';
-    frequency = isAds==true ? json['frequency'] : 0;
-    videoUrl =isAds==true ? '' : json['video_url']?? '';
-    categoryColor = isNotification ? json['blog_category'] != null ? json['blog_category'][0]['category']['color'] : '' : json['category_color'] ?? "#000000" ;
-    categoryName = isNotification ?  json['blog_category'] != null ? json['blog_category'][0]['category']['name'] : '' : json['category_name'] ?? "";
-    isVotingEnable =isAds==true ? 0 :json['is_voting_enable'] ?? 0;
-    postType = isAds ? PostType.ads : getPostType(json['type']) ;
-    scheduleDate = isAds==true ? DateTime.now() : json['schedule_date'] != null ?  json['schedule_date'] != '' ? DateTime.parse(json['schedule_date']) : DateTime.now() : DateTime.now();
+    type = json['type'] ?? 'post';
+    title = json['title'] ?? '';
+    description = isAds ? '' : json['description'] ?? '';
+    sourceName = json['source_name'];
+    sourceLink = json['source_link'] ?? '';
+    isFeatured = json['is_featured'] ?? 0;
+    voice = isAds ? '' : json['voice'] ?? '';
+    imageUrl = isAds ? json['image_url'] ?? '' : json['image_url'];
+    mediaType = isAds ? json['media_type'] ?? '' : json['media_type'];
+    media = isAds ? json['media'] ?? '' : json['media'];
+    accentCode = isAds ? '' : json['accent_code'] ?? 'en';
+    frequency = isAds ? json['frequency'] : 0;
+    videoUrl = isAds ? '' : json['video_url'] ?? '';
+    categoryColor = isNotification
+        ? json['blog_category'] != null ? json['blog_category'][0]['category']['color'] : ''
+        : json['category_color'] ?? '#000000';
+    categoryName = isNotification
+        ? json['blog_category'] != null ? json['blog_category'][0]['category']['name'] : ''
+        : json['category_name'] ?? '';
+    isVotingEnable = isAds ? 0 : json['is_voting_enable'] ?? 0;
+    postType = isAds ? PostType.ads : getPostType(json['type']);
+    scheduleDate = isAds
+        ? DateTime.now()
+        : json['schedule_date'] != null ? DateTime.tryParse(json['schedule_date'] ?? '') ?? DateTime.now() : DateTime.now();
     createdAt = json['created_at'] ?? '';
     updatedAt = json['updated_at'] ?? '';
-    backgroundImage = isAds==true ? '' : json['background_image'] ?? '';
-    isFeed =  json['is_feed'] ?? false ;
-    isVote = isAds==true ? 0 :json['is_vote'] ?? 0;
-    isBookmark = isAds==true ? 0 : json['is_bookmark'] ?? 0;
-    isUserViewed = isAds==true ? 0 :json['is_user_viewed'] ?? 0;
-    visibilities = isAds==true ? [] : json['visibilities'] ?? [];
-    question = isAds==true ? null : json['question'] != null? QuestionModel.fromJson(json['question']) : null;
-    images = isAds==true ? [] :json['images'];
-     if (json['blog_sub_category'] != []) {
-    if (json.containsKey('blog_sub_category')) {
+    backgroundImage = isAds ? '' : json['background_image'] ?? '';
+    isFeed = json['is_feed'] ?? false;
+    isVote = isAds ? 0 : json['is_vote'] ?? 0;
+    isBookmark = isAds ? 0 : json['is_bookmark'] ?? 0;
+    isUserViewed = isAds ? 0 : json['is_user_viewed'] ?? 0;
+    visibilities = isAds ? [] : json['visibilities'] ?? [];
+    question = isAds ? null : json['question'] != null ? QuestionModel.fromJson(json['question']) : null;
+    images = isAds ? [] : json['images'];
+    if (json['blog_sub_category'] != null && json['blog_sub_category'] is List) {
       blogSubCategory = [];
-      json['blog_sub_category'].forEach((v) {
-        if(v['category'] != null) {
-         blogSubCategory!.add( BlogSubCategory.fromJson(v['category']));
+      for (var subCategory in json['blog_sub_category']) {
+        if (subCategory['category'] != null) {
+          blogSubCategory!.add(BlogSubCategory.fromJson(subCategory['category']));
         }
-     
-      });
+      }
     }
-   }
+    if (allSettings.value.isVoiceEnabled == true && allSettings.value.googleApikey != null) {
+      audioData = json['audioData'];
+    }
   }
 
-@override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Blog &&
-          runtimeType == other.runtimeType &&
-          id == other.id &&
-          title == other.title &&
-          description == other.description;
-
-  PostType getPostType(data){
+  PostType getPostType(String? data) {
     switch (data) {
       case 'ads':
         return PostType.ads;
       case 'post':
         return PostType.image;
       case 'video':
-         return PostType.video;
+        return PostType.video;
       case 'quote':
-         return PostType.quote;
+        return PostType.quote;
       default:
         return PostType.image;
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data =  <String, dynamic>{};
+    final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['type'] = type;
     data['title'] = title;
@@ -257,16 +251,11 @@ class Blog {
     data['accent_code'] = accentCode;
     data['video_url'] = videoUrl;
     if (allSettings.value.isVoiceEnabled == true && allSettings.value.googleApikey != '') {
-      data["audioData"] = audioData;
+      data['audioData'] = audioData;
     }
     data['is_voting_enable'] = isVotingEnable;
-    data['schedule_date'] = scheduleDate != null ? scheduleDate!.toIso8601String() : null;
+    data['schedule_date'] = scheduleDate?.toIso8601String();
     data['created_at'] = createdAt;
-    data["image_url"] = imageUrl;
-    data["media_type"] = mediaType;
-    data["media"] = media;
-    data['category_color'] = categoryColor;
-    data['category_name'] = categoryName;
     data['updated_at'] = updatedAt;
     data['background_image'] = backgroundImage;
     data['is_feed'] = isFeed;
@@ -274,22 +263,217 @@ class Blog {
     data['is_bookmark'] = isBookmark;
     data['is_user_viewed'] = isUserViewed;
     data['visibilities'] = visibilities;
-    data['question'] = question;
-    data['images'] = images;
+    data['category_color'] = categoryColor;
+    data['category_name'] = categoryName;
+    data['image_url'] = imageUrl;
+    data['media_type'] = mediaType;
+    data['media'] = media;
     if (blogSubCategory != null) {
-      data['blog_sub_category'] =
-          blogSubCategory!.map((v) => v.toJson()).toList();
+      data['blog_sub_category'] = blogSubCategory!.map((v) => v.toJson()).toList();
     }
     if (question != null) {
       data['question'] = question!.toJson();
     }
+    data['images'] = images;
     return data;
   }
-  
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is Blog &&
+              runtimeType == other.runtimeType &&
+              id == other.id &&
+              title == other.title &&
+              description == other.description;
+
   @override
   int get hashCode => id.hashCode;
-  
 }
+
+
+
+// class Blog {
+//   int? id;
+//   String? type;
+//   String? title;
+//   String? description;
+//   String? sourceName;
+//   String? sourceLink;
+//   String? voice;
+//   String? accentCode;
+//   String? videoUrl;
+//   int? isVotingEnable;
+//   DateTime? scheduleDate;
+//   String? createdAt;
+//   String? updatedAt;
+//   String? backgroundImage;
+//   bool? isFeed;
+//   int? isVote;
+//   int? isFeatured;
+//   String? categoryColor;
+//   int? isBookmark;
+//   int? isUserViewed;
+//   List? visibilities;
+//   int? frequency;
+//   String? mediaType,media,imageUrl;
+//   QuestionModel? question;
+//   List? images;
+//   PostType? postType;
+//   List<BlogSubCategory>? blogSubCategory;
+//   String? categoryName;
+//   Uint8List? audioData;
+//
+//
+//   Blog({
+//       this.id,
+//       this.frequency,
+//       this.type,
+//       this.title,
+//       this.description,
+//       this.sourceName,
+//       this.sourceLink,
+//       this.voice,
+//       this.isFeatured,
+//       this.accentCode,
+//       this.videoUrl,
+//       this.isVotingEnable,
+//       this.scheduleDate,
+//       this.createdAt,
+//       this.updatedAt,
+//       this.postType,
+//       this.backgroundImage,
+//       this.isFeed,
+//       this.categoryName,
+//       this.isVote,
+//       this.isBookmark,
+//       this.isUserViewed,
+//       this.visibilities,
+//       this.question,
+//       this.images,
+//       this.categoryColor,
+//       this.mediaType,
+//       this.media,
+//       this.audioData,
+//       this.blogSubCategory
+//   });
+//
+//
+//   Blog.fromJson(Map<String, dynamic> json,{isNotification = false,isCache = false,isAds=false}) {
+//     id = json['id'] ?? 0;
+//     type = json['type']?? 'post';
+//     title = json['title']??'';
+//     description =  isAds==true ? '' : json['description'] ?? '';
+//     sourceName =  json['source_name'];
+//     sourceLink = json['source_link']??'';
+//     isFeatured = json['is_featured'];
+//     if (allSettings.value.isVoiceEnabled == true && allSettings.value.googleApikey != null) {
+//          audioData = json['audioData'];
+//     }
+//     voice = isAds==true ? '' : json['voice']??'';
+//     imageUrl = isAds==true ? json["image_url"] ?? '': null;
+//     mediaType = isAds==true ?json["media_type"] ?? '': null;
+//     media  = isAds==true ? json["media"] ?? '': null;
+//     accentCode = isAds==true ? '' :json['accent_code']??'en';
+//     frequency = isAds==true ? json['frequency'] : 0;
+//     videoUrl =isAds==true ? '' : json['video_url']?? '';
+//     categoryColor = isNotification ? json['blog_category'] != null ? json['blog_category'][0]['category']['color'] : '' : json['category_color'] ?? "#000000" ;
+//     categoryName = isNotification ?  json['blog_category'] != null ? json['blog_category'][0]['category']['name'] : '' : json['category_name'] ?? "";
+//     isVotingEnable =isAds==true ? 0 :json['is_voting_enable'] ?? 0;
+//     postType = isAds ? PostType.ads : getPostType(json['type']) ;
+//     scheduleDate = isAds==true ? DateTime.now() : json['schedule_date'] != null ?  json['schedule_date'] != '' ? DateTime.parse(json['schedule_date']) : DateTime.now() : DateTime.now();
+//     createdAt = json['created_at'] ?? '';
+//     updatedAt = json['updated_at'] ?? '';
+//     backgroundImage = isAds==true ? '' : json['background_image'] ?? '';
+//     isFeed =  json['is_feed'] ?? false ;
+//     isVote = isAds==true ? 0 :json['is_vote'] ?? 0;
+//     isBookmark = isAds==true ? 0 : json['is_bookmark'] ?? 0;
+//     isUserViewed = isAds==true ? 0 :json['is_user_viewed'] ?? 0;
+//     visibilities = isAds==true ? [] : json['visibilities'] ?? [];
+//     question = isAds==true ? null : json['question'] != null? QuestionModel.fromJson(json['question']) : null;
+//     images = isAds==true ? [] :json['images'];
+//      if (json['blog_sub_category'] != []) {
+//     if (json.containsKey('blog_sub_category')) {
+//       blogSubCategory = [];
+//       json['blog_sub_category'].forEach((v) {
+//         if(v['category'] != null) {
+//          blogSubCategory!.add( BlogSubCategory.fromJson(v['category']));
+//         }
+//
+//       });
+//     }
+//    }
+//   }
+//
+// @override
+//   bool operator ==(Object other) =>
+//       identical(this, other) ||
+//       other is Blog &&
+//           runtimeType == other.runtimeType &&
+//           id == other.id &&
+//           title == other.title &&
+//           description == other.description;
+//
+//   PostType getPostType(data){
+//     switch (data) {
+//       case 'ads':
+//         return PostType.ads;
+//       case 'post':
+//         return PostType.image;
+//       case 'video':
+//          return PostType.video;
+//       case 'quote':
+//          return PostType.quote;
+//       default:
+//         return PostType.image;
+//     }
+//   }
+//
+//   Map<String, dynamic> toJson() {
+//     final Map<String, dynamic> data =  <String, dynamic>{};
+//     data['id'] = id;
+//     data['type'] = type;
+//     data['title'] = title;
+//     data['description'] = description;
+//     data['source_name'] = sourceName;
+//     data['source_link'] = sourceLink;
+//     data['voice'] = voice;
+//     data['accent_code'] = accentCode;
+//     data['video_url'] = videoUrl;
+//     if (allSettings.value.isVoiceEnabled == true && allSettings.value.googleApikey != '') {
+//       data["audioData"] = audioData;
+//     }
+//     data['is_voting_enable'] = isVotingEnable;
+//     data['schedule_date'] = scheduleDate?.toIso8601String();
+//     data['created_at'] = createdAt;
+//     data["image_url"] = imageUrl;
+//     data["media_type"] = mediaType;
+//     data["media"] = media;
+//     data['category_color'] = categoryColor;
+//     data['category_name'] = categoryName;
+//     data['updated_at'] = updatedAt;
+//     data['background_image'] = backgroundImage;
+//     data['is_feed'] = isFeed;
+//     data['is_vote'] = isVote;
+//     data['is_bookmark'] = isBookmark;
+//     data['is_user_viewed'] = isUserViewed;
+//     data['visibilities'] = visibilities;
+//     data['question'] = question;
+//     data['images'] = images;
+//     if (blogSubCategory != null) {
+//       data['blog_sub_category'] =
+//           blogSubCategory!.map((v) => v.toJson()).toList();
+//     }
+//     if (question != null) {
+//       data['question'] = question!.toJson();
+//     }
+//     return data;
+//   }
+//
+//   @override
+//   int get hashCode => id.hashCode;
+//
+// }
 
 class PollOption{
   PollOption({

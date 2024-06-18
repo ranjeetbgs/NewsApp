@@ -1,4 +1,9 @@
+import 'dart:convert';
+
+import 'package:incite/api_controller/manage_local.dart';
+
 import '../model/blog.dart';
+import '../urls/url.dart';
 
 class BlogListHolder {
   DataModel _list = DataModel();
@@ -19,7 +24,15 @@ class BlogListHolder {
 
   void setList(DataModel list) {
     _list = list;
+    // saveToLocal();
   }
+
+  // saveToLocal() async {
+  //   for (var e in _list.blogs) {
+  //     final item = "${Urls.baseUrl}blog-detail/${e.id}";
+  //     await ManageLocalData.saveToLocal(key: item, value: jsonEncode(e.toJson()));
+  //   }
+  // }
 
    void updateList(DataModel list) {
     _list.currentPage = list.currentPage;

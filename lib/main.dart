@@ -201,102 +201,102 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   manageNotifications(OSNotificationClickEvent result) async {
+
+    appLaunchResult = result;
     if (notificationListener != null) {
       notificationListener!.call(result);
       return;
-    } else {
-      appLaunchResult = result;
-      return;
     }
+    return;
 
-    // if (appLoaded == false) {
-    //   await Future.delayed(const Duration(seconds: 5));
-    // }
-    // final blog = json.decode(result.notification.rawPayload!['custom'].toString())['a']['blog'];
-    // final buttons = result.notification.buttons!.toList();
-    // final action = result.notification.rawPayload!['actionId'];
-    // //  WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-    // var provider = Provider.of<AppProvider>(navkey.currentState!.context, listen: false);
-    //
-    // if (blog != null) {
-    //   try {
-    //     provider.setNotificationLoading(true);
-    //     var url = "${Urls.baseUrl}blog-detail/$blog";
-    //     var result = await http.get(
-    //       Uri.parse(url),
-    //     );
-    //     log("Got info....     ${result.body}");
-    //     // if(result.statusCode == 200) {
-    //     //   ManageLocalData.saveToLocal(key: url, value: result.body);
-    //     // }
-    //     Map data = await json.decode(result.body);
-    //     if (data['success'] == true) {
-    //       final list = Blog.fromJson(data['data'], isNotification: true);
-    //       // print(list.type);
-    //
-    //       if (list.type == 'quote') {
-    //         var data = provider.allNews!.blogs;
-    //         provider.allNews!.blogs = [];
-    //         provider.allNews!.blogs.add(list);
-    //         if (data.isNotEmpty && data.contains(list)) {
-    //           data.remove(list);
-    //         }
-    //         provider.allNews!.blogs.addAll(data);
-    //         blogListHolder.clearList();
-    //         blogListHolder.setBlogType(BlogType.allnews);
-    //         blogListHolder.setList(provider.allNews as DataModel);
-    //         provider.updateUI();
-    //         provider.setNotificationLoading(false);
-    //         if (mounted) {
-    //           setState(() {});
-    //         }
-    //         navkey.currentState!.pushNamed('/BlogWrap', arguments: [
-    //           0,
-    //           false,
-    //           PreloadPageController(),
-    //           "noti${list.id}",
-    //           action == 'Share' ? BlogOptionType.share : null,
-    //           true
-    //         ]);
-    //       } else {
-    //         if (list.images!.isNotEmpty) {
-    //           await precacheImage(CachedNetworkImageProvider(list.images![0]), context);
-    //         }
-    //         if (buttons.isNotEmpty && action == 'Bookmark') {
-    //           updateBlogList(list, provider);
-    //           provider.setNotificationLoading(false);
-    //           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-    //             navkey.currentState!.pushNamed('/BlogWrap',
-    //                 arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.bookmark, true]);
-    //           });
-    //         } else if (buttons.isNotEmpty && action == 'Share') {
-    //           updateBlogList(list, provider);
-    //           provider.setNotificationLoading(false);
-    //           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-    //             navkey.currentState!.pushNamed('/BlogWrap',
-    //                 arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.share, true]);
-    //           });
-    //         } else {
-    //           // ignore: use_build_context_synchronously
-    //           updateBlogList(list, provider);
-    //           provider.setNotificationLoading(false);
-    //           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-    //             navkey.currentState!.pushNamed('/BlogWrap',
-    //                 arguments: [0, false, PreloadPageController(), "noti${list.id}", null, true]);
-    //           });
-    //         }
-    //       }
-    //     }
-    //
-    //     provider.setNotificationLoading(false);
-    //   } on Exception catch (e) {
-    //     provider.setNotificationLoading(false);
-    //
-    //     if (kDebugMode) {
-    //       print(e.toString());
-    //     }
-    //   }
-    // }
+    if (appLoaded == false) {
+      await Future.delayed(const Duration(seconds: 5));
+    }
+    final blog = json.decode(result.notification.rawPayload!['custom'].toString())['a']['blog'];
+    final buttons = result.notification.buttons!.toList();
+    final action = result.notification.rawPayload!['actionId'];
+    //  WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+    var provider = Provider.of<AppProvider>(navkey.currentState!.context, listen: false);
+
+    if (blog != null) {
+      try {
+        provider.setNotificationLoading(true);
+        var url = "${Urls.baseUrl}blog-detail/$blog";
+        var result = await http.get(
+          Uri.parse(url),
+        );
+        log("Got info....     ${result.body}");
+        // if(result.statusCode == 200) {
+        //   ManageLocalData.saveToLocal(key: url, value: result.body);
+        // }
+        Map data = await json.decode(result.body);
+        if (data['success'] == true) {
+          final list = Blog.fromJson(data['data'], isNotification: true);
+          // print(list.type);
+
+          if (list.type == 'quote') {
+            var data = provider.allNews!.blogs;
+            provider.allNews!.blogs = [];
+            provider.allNews!.blogs.add(list);
+            if (data.isNotEmpty && data.contains(list)) {
+              data.remove(list);
+            }
+            provider.allNews!.blogs.addAll(data);
+            blogListHolder.clearList();
+            blogListHolder.setBlogType(BlogType.allnews);
+            blogListHolder.setList(provider.allNews as DataModel);
+            provider.updateUI();
+            provider.setNotificationLoading(false);
+            if (mounted) {
+              setState(() {});
+            }
+            navkey.currentState!.pushNamed('/BlogWrap', arguments: [
+              0,
+              false,
+              PreloadPageController(),
+              "noti${list.id}",
+              action == 'Share' ? BlogOptionType.share : null,
+              true
+            ]);
+          } else {
+            if (list.images!.isNotEmpty) {
+              await precacheImage(CachedNetworkImageProvider(list.images![0]), context);
+            }
+            if (buttons.isNotEmpty && action == 'Bookmark') {
+              updateBlogList(list, provider);
+              provider.setNotificationLoading(false);
+              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                navkey.currentState!.pushNamed('/BlogWrap',
+                    arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.bookmark, true]);
+              });
+            } else if (buttons.isNotEmpty && action == 'Share') {
+              updateBlogList(list, provider);
+              provider.setNotificationLoading(false);
+              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                navkey.currentState!.pushNamed('/BlogWrap',
+                    arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.share, true]);
+              });
+            } else {
+              // ignore: use_build_context_synchronously
+              updateBlogList(list, provider);
+              provider.setNotificationLoading(false);
+              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                navkey.currentState!.pushNamed('/BlogWrap',
+                    arguments: [0, false, PreloadPageController(), "noti${list.id}", null, true]);
+              });
+            }
+          }
+        }
+
+        provider.setNotificationLoading(false);
+      } on Exception catch (e) {
+        provider.setNotificationLoading(false);
+
+        if (kDebugMode) {
+          print(e.toString());
+        }
+      }
+    }
   }
 
   @override
