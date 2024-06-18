@@ -68,18 +68,17 @@ class _SplashScreenState extends State<SplashScreen> {
   FutureOr<void> switchToPage() {
     //   if (prefs!.containsKey('maintain') && prefs!.getBool('maintain') == false) {
     if (currentUser.value.id != null) {
-      Navigator.pushNamedAndRemoveUntil(
-          context, '/MainPage', arguments: 1, (route) => false);
+      Navigator.pushNamedAndRemoveUntil(context, '/MainPage', arguments: 1, (route) => false);
     } else {
-      // if (!prefs!.containsKey('local_data')) {
-      //      Navigator.pushNamedAndRemoveUntil(context, '/GetStarted',(route) => false);
-      //   }else{
-      Navigator.pushNamedAndRemoveUntil(
-          context, '/LoginPage', (route) => false);
+      Navigator.pushNamedAndRemoveUntil(context, '/MainPage', (route) => false);
+      //   // if (!prefs!.containsKey('local_data')) {
+      //   //      Navigator.pushNamedAndRemoveUntil(context, '/GetStarted',(route) => false);
+      //   //   }else{
+      //   Navigator.pushNamedAndRemoveUntil(
+      //       context, '/LoginPage', (route) => false);
+      //   // }
       // }
     }
-
-    //}
   }
 
   @override
@@ -94,8 +93,7 @@ class _SplashScreenState extends State<SplashScreen> {
           builder: (context, value, child) {
             return AnnotatedRegion(
               value: SystemUiOverlayStyle(
-                  statusBarIconBrightness:
-                      dark(context) ? Brightness.light : Brightness.dark,
+                  statusBarIconBrightness: dark(context) ? Brightness.light : Brightness.dark,
                   statusBarColor: Colors.transparent),
               child: Scaffold(
                 body: Column(
@@ -114,13 +112,11 @@ class _SplashScreenState extends State<SplashScreen> {
                                       height: 100,
                                     )
                                   : CachedNetworkImage(
-                                      imageUrl:
-                                          "${value.baseImageUrl}/${value.appSplashScreen.toString()}",
+                                      imageUrl: "${value.baseImageUrl}/${value.appSplashScreen.toString()}",
                                       width: 100,
                                       height: 100,
                                       errorWidget: (context, url, error) {
-                                        return Image.asset(Img.logo,
-                                            width: 100, height: 100);
+                                        return Image.asset(Img.logo, width: 100, height: 100);
                                       }))),
                     )
                   ],

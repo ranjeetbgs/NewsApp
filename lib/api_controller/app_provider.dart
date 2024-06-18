@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
@@ -16,6 +17,18 @@ DateTime? signInStart;
 DateTime? signInEnd;
 
 class AppProvider with ChangeNotifier {
+
+  updateUI(){
+    notifyListeners();
+  }
+
+  bool showNotificationLoading = false;
+
+  void setNotificationLoading(bool value){
+    showNotificationLoading = value;
+    notifyListeners();
+  }
+
   bool _load = false;
  DataCollection? _blog;
   var _blogList;
@@ -146,9 +159,9 @@ class AppProvider with ChangeNotifier {
         DataModel data2 = DataModel.fromJson(data);
         bookmarks = data2.blogs;
         permanentIds= [];
-        data2.blogs.forEach((element) {
+        for (var element in data2.blogs) {
           permanentIds.add(element.id!.toInt());
-        });
+        }
         bookmarks.add(Blog(id: 2345678,title: 'Last-Bookmark'));
         blogListHolder2.clearList();
         blogListHolder2.setList(data2);
@@ -173,20 +186,27 @@ class AppProvider with ChangeNotifier {
         // debugPrint(data.toString());
         // print(data['data'] );
       //  bookmarks = data['data'].map((e) =>Blog.fromJson(e)).toList();
-         if (data['data'] != null) {
-            final list = DataModel.fromJson(data['data']);
-          bookmarks = list.blogs;
-          list.blogs.forEach((element) {
-          permanentIds.add(element.id!.toInt());
-        });
 
-          prefs!.setBool('isBookmark', true);
-          prefs!.setString('bookmarks',json.encode(data['data']));
-          return list;
-         }else{
-           setAllBookmarks();
+         try {
+           if (data['data'] != null && data['data'] != []) {
+             log("data['data']....    ${data['data']}");
+             final list = DataModel.fromJson(data['data']);
+             bookmarks = list.blogs;
+             for (var element in list.blogs) {
+               permanentIds.add(element.id!.toInt());
+             }
+
+             prefs!.setBool('isBookmark', true);
+             prefs!.setString('bookmarks', json.encode(data['data']));
+             return list;
+           } else {
+             setAllBookmarks();
+           }
+         } catch(e){
+           return null;
          }
           notifyListeners();
+         return null;
           
        }else{
         return null;

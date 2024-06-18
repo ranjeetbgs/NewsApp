@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:facebook_audience_network/facebook_audience_network.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -30,10 +32,11 @@ import 'package:preload_page_view/preload_page_view.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_controller/app_provider.dart';
+import 'api_controller/manage_local.dart';
 import 'model/lang.dart';
+import 'pages/main/blog_wrap.dart';
 import 'splash_screen.dart';
 
-//InciteHttp? httpClient;
 GlobalKey<NavigatorState> navkey = GlobalKey<NavigatorState>();
 PendingDynamicLinkData? initialLink;
 
@@ -122,6 +125,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     blogListHolder.clearList();
     blogListHolder.setList(provider.allNews as DataModel);
     blogListHolder.setBlogType(BlogType.allnews);
+    provider.updateUI();
     setState(() {});
   }
 
@@ -137,7 +141,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     OneSignal.Notifications.requestPermission(false).then((accepted) async {
       final String? osUserID = OneSignal.User.pushSubscription.id;
       if (osUserID != null) {
-        debugPrint('-----------  Player ID ------------ ');
+        debugPrint('-----------  Player ID ------------    ${osUserID}');
         debugPrint(osUserID);
         await setOnesignalUserId(osUserID.toString());
         if (prefs!.containsKey('player_id')) {
@@ -151,8 +155,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // ------------------ app Id --------------------
     // The promptForPushNotificationsWithUserResponse function will show the iOS or Android push notification prompt.
     //We recommend removing the following code and instead using an In-App Message to prompt for notification permission
-    OneSignal.User.pushSubscription
-        .addObserver((OSPushSubscriptionChangedState changes) async {
+    OneSignal.User.pushSubscription.addObserver((OSPushSubscriptionChangedState changes) async {
+      log("pushSubscription......         $changes");
       final String? osUserID = OneSignal.User.pushSubscription.id;
 
       if (osUserID != null) {
@@ -165,117 +169,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       }
     });
 
-    OneSignal.Notifications.addForegroundWillDisplayListener(
-        (OSNotificationWillDisplayEvent event) {
+    OneSignal.Notifications.addForegroundWillDisplayListener((OSNotificationWillDisplayEvent event) {
       // Will be called whenever a notification is received in foreground
       // Display Notification, pass null param for not displaying the notification
     });
     // bool loading = false;
     OneSignal.Notifications.removeClickListener((event) {});
-    OneSignal.Notifications.addClickListener(
-        (OSNotificationClickEvent result) async {
-      if (appLoaded == false) {
-        await Future.delayed(const Duration(seconds: 5));
-      }
-      final blog =
-          json.decode(result.notification.rawPayload!['custom'].toString())['a']
-              ['blog'];
-      final buttons = result.notification.buttons!.toList();
-      final action = result.notification.rawPayload!['actionId'];
-      //  WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      var provider =
-          // ignore: use_build_context_synchronously
-          Provider.of<AppProvider>(navkey.currentState!.context, listen: false);
 
-      if (blog != null) {
-        // loading = true;
-        // Future.delayed(const Duration(seconds: 5)).then((value) {
-        //   loading = false;
-        // });
-        try {
-          var url = "${Urls.baseUrl}blog-detail/$blog";
-          var result = await http.get(
-            Uri.parse(url),
-          );
-          Map data = await json.decode(result.body);
-          if (data['success'] == true) {
-            final list = Blog.fromJson(data['data'], isNotification: true);
-            // print(list.type);
-
-            if (list.type == 'quote') {
-              var data = provider.allNews!.blogs;
-              provider.allNews!.blogs = [];
-              provider.allNews!.blogs.add(list);
-              if (data.isNotEmpty && data.contains(list)) {
-                data.remove(list);
-              }
-              provider.allNews!.blogs.addAll(data);
-              blogListHolder.clearList();
-              blogListHolder.setBlogType(BlogType.allnews);
-              blogListHolder.setList(provider.allNews as DataModel);
-              setState(() {});
-              SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-                navkey.currentState!.pushNamed('/BlogWrap', arguments: [
-                  0,
-                  false,
-                  PreloadPageController(),
-                  "noti${list.id}",
-                  action == 'Share' ? BlogOptionType.share : null,
-                  true
-                ]);
-              });
-            } else {
-              if (list.images!.isNotEmpty) {
-                WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-                  await precacheImage(
-                      CachedNetworkImageProvider(list.images![0]), context);
-                });
-              }
-              if (buttons.isNotEmpty && action == 'Bookmark') {
-                updateBlogList(list, provider);
-                WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                  navkey.currentState!.pushNamed('/BlogWrap', arguments: [
-                    0,
-                    false,
-                    PreloadPageController(),
-                    "noti${list.id}",
-                    BlogOptionType.bookmark,
-                    true
-                  ]);
-                });
-              } else if (buttons.isNotEmpty && action == 'Share') {
-                updateBlogList(list, provider);
-                WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                  navkey.currentState!.pushNamed('/BlogWrap', arguments: [
-                    0,
-                    false,
-                    PreloadPageController(),
-                    "noti${list.id}",
-                    BlogOptionType.share,
-                    true
-                  ]);
-                });
-              } else {
-                // ignore: use_build_context_synchronously
-                updateBlogList(list, provider);
-                WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                  navkey.currentState!.pushNamed('/BlogWrap', arguments: [
-                    0,
-                    false,
-                    PreloadPageController(),
-                    "noti${list.id}",
-                    null,
-                    true
-                  ]);
-                });
-              }
-            }
-          }
-        } on Exception catch (e) {
-          print(e.toString());
-        }
-      }
-    });
+    OneSignal.Notifications.addClickListener(manageNotifications);
     // OneSignal.shared.setPermissionObserver((OSPermissionStateChanges changes) {
     //   // Will be called whenever the permission changes
     //   // (ie. user taps Allow on the permission prompt in iOS)
@@ -299,14 +200,112 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
   }
 
+  manageNotifications(OSNotificationClickEvent result) async {
+    if (notificationListener != null) {
+      notificationListener!.call(result);
+      return;
+    } else {
+      appLaunchResult = result;
+      return;
+    }
+
+    // if (appLoaded == false) {
+    //   await Future.delayed(const Duration(seconds: 5));
+    // }
+    // final blog = json.decode(result.notification.rawPayload!['custom'].toString())['a']['blog'];
+    // final buttons = result.notification.buttons!.toList();
+    // final action = result.notification.rawPayload!['actionId'];
+    // //  WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+    // var provider = Provider.of<AppProvider>(navkey.currentState!.context, listen: false);
+    //
+    // if (blog != null) {
+    //   try {
+    //     provider.setNotificationLoading(true);
+    //     var url = "${Urls.baseUrl}blog-detail/$blog";
+    //     var result = await http.get(
+    //       Uri.parse(url),
+    //     );
+    //     log("Got info....     ${result.body}");
+    //     // if(result.statusCode == 200) {
+    //     //   ManageLocalData.saveToLocal(key: url, value: result.body);
+    //     // }
+    //     Map data = await json.decode(result.body);
+    //     if (data['success'] == true) {
+    //       final list = Blog.fromJson(data['data'], isNotification: true);
+    //       // print(list.type);
+    //
+    //       if (list.type == 'quote') {
+    //         var data = provider.allNews!.blogs;
+    //         provider.allNews!.blogs = [];
+    //         provider.allNews!.blogs.add(list);
+    //         if (data.isNotEmpty && data.contains(list)) {
+    //           data.remove(list);
+    //         }
+    //         provider.allNews!.blogs.addAll(data);
+    //         blogListHolder.clearList();
+    //         blogListHolder.setBlogType(BlogType.allnews);
+    //         blogListHolder.setList(provider.allNews as DataModel);
+    //         provider.updateUI();
+    //         provider.setNotificationLoading(false);
+    //         if (mounted) {
+    //           setState(() {});
+    //         }
+    //         navkey.currentState!.pushNamed('/BlogWrap', arguments: [
+    //           0,
+    //           false,
+    //           PreloadPageController(),
+    //           "noti${list.id}",
+    //           action == 'Share' ? BlogOptionType.share : null,
+    //           true
+    //         ]);
+    //       } else {
+    //         if (list.images!.isNotEmpty) {
+    //           await precacheImage(CachedNetworkImageProvider(list.images![0]), context);
+    //         }
+    //         if (buttons.isNotEmpty && action == 'Bookmark') {
+    //           updateBlogList(list, provider);
+    //           provider.setNotificationLoading(false);
+    //           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+    //             navkey.currentState!.pushNamed('/BlogWrap',
+    //                 arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.bookmark, true]);
+    //           });
+    //         } else if (buttons.isNotEmpty && action == 'Share') {
+    //           updateBlogList(list, provider);
+    //           provider.setNotificationLoading(false);
+    //           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+    //             navkey.currentState!.pushNamed('/BlogWrap',
+    //                 arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.share, true]);
+    //           });
+    //         } else {
+    //           // ignore: use_build_context_synchronously
+    //           updateBlogList(list, provider);
+    //           provider.setNotificationLoading(false);
+    //           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+    //             navkey.currentState!.pushNamed('/BlogWrap',
+    //                 arguments: [0, false, PreloadPageController(), "noti${list.id}", null, true]);
+    //           });
+    //         }
+    //       }
+    //     }
+    //
+    //     provider.setNotificationLoading(false);
+    //   } on Exception catch (e) {
+    //     provider.setNotificationLoading(false);
+    //
+    //     if (kDebugMode) {
+    //       print(e.toString());
+    //     }
+    //   }
+    // }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Handle the lifecycle state change
     switch (state) {
       case AppLifecycleState.resumed:
         timer = Timer.periodic(const Duration(minutes: 10), (timer) {
-          if (WidgetsBinding.instance.lifecycleState ==
-              AppLifecycleState.resumed) {
+          if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
             _fetchData();
             debugPrint('-------------- Data is resumed ------------------');
           }
@@ -330,6 +329,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         debugPrint('-------------- Data is detached ------------------');
 
         break;
+      case AppLifecycleState.hidden:
+        // TODO: Handle this case.
+        break;
     }
   }
 
@@ -347,13 +349,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                       return AnnotatedRegion<SystemUiOverlayStyle>(
                           value: SystemUiOverlayStyle(
                             systemNavigationBarIconBrightness:
-                                appThemeModel.value.isDarkModeEnabled.value
-                                    ? Brightness.light
-                                    : Brightness.dark,
+                                appThemeModel.value.isDarkModeEnabled.value ? Brightness.light : Brightness.dark,
                             systemNavigationBarColor:
-                                appThemeModel.value.isDarkModeEnabled.value
-                                    ? ColorUtil.textblack
-                                    : Colors.white,
+                                appThemeModel.value.isDarkModeEnabled.value ? ColorUtil.textblack : Colors.white,
                           ),
                           child: MaterialApp(
                             navigatorObservers: [NavigateUtil()],
@@ -363,21 +361,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                             debugShowCheckedModeBanner: false,
                             builder: (context, child) {
                               child = Directionality(
-                                textDirection: lang.pos == 'rtl'
-                                    ? TextDirection.rtl
-                                    : TextDirection.ltr,
+                                textDirection: lang.pos == 'rtl' ? TextDirection.rtl : TextDirection.ltr,
                                 child: child as Widget,
                               ); //do something
                               return child;
                             },
                             onGenerateRoute: RouteGenerator.generateRoute,
                             theme: value.isDarkModeEnabled.value
-                                ? getDarkThemeData(
-                                    hexToRgb(setting.primaryColor),
-                                    hexToRgb(setting.secondaryColor))
-                                : getLightThemeData(
-                                    hexToRgb(setting.primaryColor),
-                                    hexToRgb(setting.secondaryColor)),
+                                ? getDarkThemeData(hexToRgb(setting.primaryColor), hexToRgb(setting.secondaryColor))
+                                : getLightThemeData(hexToRgb(setting.primaryColor), hexToRgb(setting.secondaryColor)),
                           ));
                     });
               });
@@ -418,19 +410,11 @@ class _GetStartedState extends State<GetStarted> {
               height: 250,
               decoration: const BoxDecoration(
                 color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                      offset: Offset(0, -70),
-                      blurRadius: 70,
-                      color: Color.fromRGBO(0, 0, 0, 0.2))
-                ],
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(40),
-                    topRight: Radius.circular(40)),
+                boxShadow: [BoxShadow(offset: Offset(0, -70), blurRadius: 70, color: Color.fromRGBO(0, 0, 0, 0.2))],
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40)),
               ),
               child: Padding(
-                padding: const EdgeInsets.only(
-                    left: 30, right: 30, top: 32, bottom: 12),
+                padding: const EdgeInsets.only(left: 30, right: 30, top: 32, bottom: 12),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -438,20 +422,14 @@ class _GetStartedState extends State<GetStarted> {
                       'News from around the world for you',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                          fontFamily: 'Roboto',
-                          fontSize: 30,
-                          fontWeight: FontWeight.w600,
-                          color: ColorUtil.textblack),
+                          fontFamily: 'Roboto', fontSize: 30, fontWeight: FontWeight.w600, color: ColorUtil.textblack),
                     ),
                     const SizedBox(height: 10),
                     const Text(
                       'Best time to read, take your time to read a little more of this world',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: ColorUtil.textgrey),
+                          fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w400, color: ColorUtil.textgrey),
                     ),
                     const SizedBox(height: 18),
                     ElevateButton(onTap: () {
@@ -471,9 +449,7 @@ class _GetStartedState extends State<GetStarted> {
 bool appLoaded = false;
 PageTransition customPageTransisition(Widget widget, {bool reverse = false}) {
   return PageTransition(
-      type: reverse
-          ? PageTransitionType.leftToRight
-          : PageTransitionType.rightToLeft,
+      type: reverse ? PageTransitionType.leftToRight : PageTransitionType.rightToLeft,
       duration: const Duration(milliseconds: 250),
       child: widget);
 }

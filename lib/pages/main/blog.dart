@@ -98,12 +98,10 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
 
   bool isLeftSwipe = false;
 
-  var admobFreq = int.parse(allSettings.value.admobFrequency.toString() == '0'
-      ? '1'
-      : allSettings.value.admobFrequency.toString());
-  var fbadsFreq = int.parse(allSettings.value.fbAdsFrequency.toString() == '0'
-      ? '1'
-      : allSettings.value.fbAdsFrequency.toString());
+  var admobFreq =
+      int.parse(allSettings.value.admobFrequency.toString() == '0' ? '1' : allSettings.value.admobFrequency.toString());
+  var fbadsFreq =
+      int.parse(allSettings.value.fbAdsFrequency.toString() == '0' ? '1' : allSettings.value.fbAdsFrequency.toString());
 
   @override
   void initState() {
@@ -123,8 +121,7 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
       if (widget.type != null && widget.type == BlogOptionType.share) {
         // SchedulerBinding.instance.addPostFrameCallback((timeStamp) async{
         Future.delayed(const Duration(milliseconds: 2000), () async {
-          await captureScreenshot(previewContainer, isPost: true)
-              .then((value) async {
+          await captureScreenshot(previewContainer, isPost: true).then((value) async {
             // isShare = true;
             // setState(() {   });
             if (value != null) {
@@ -139,16 +136,13 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
 
           // });
         });
-      } else if (widget.type != null &&
-          widget.type == BlogOptionType.bookmark) {
+      } else if (widget.type != null && widget.type == BlogOptionType.bookmark) {
         if (currentUser.value.id != null) {
           if (!provider!.permanentIds.contains(widget.model!.id)) {
-            showCustomToast(
-                context, allMessages.value.bookmarkSave ?? 'Bookmark Saved');
+            showCustomToast(context, allMessages.value.bookmarkSave ?? 'Bookmark Saved');
             provider!.addBookmarkData(widget.model!.id!.toInt());
           } else {
-            showCustomToast(context,
-                allMessages.value.bookmarkRemove ?? 'Bookmark Removed');
+            showCustomToast(context, allMessages.value.bookmarkRemove ?? 'Bookmark Removed');
             provider!.removeBookmarkData(widget.model!.id!.toInt());
           }
           provider!.setBookmark(blog: widget.model as Blog);
@@ -164,8 +158,7 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
   }
 
   Future<Uint8List?> speech(String text) async {
-    final response = await generateSpeech(
-        text, widget.model!.accentCode.toString(), 'en-GB-Neural2-A');
+    final response = await generateSpeech(text, widget.model!.accentCode.toString(), 'en-GB-Neural2-A');
     setState(() {
       audioLoad = response;
       widget.model!.audioData = audioLoad;
@@ -175,8 +168,7 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
   }
 
   Future<void> setSpeechRate(double rate) async {
-    await flutterTts
-        .setSpeechRate(rate); // Set the speech rate using the FlutterTts plugin
+    await flutterTts.setSpeechRate(rate); // Set the speech rate using the FlutterTts plugin
   }
 
   @override
@@ -193,6 +185,9 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
         break;
       case AppLifecycleState.detached:
         // App is detached from any host and all resources have been released
+        break;
+      case AppLifecycleState.hidden:
+        // TODO: Handle this case.
         break;
     }
     super.didChangeAppLifecycleState(state);
@@ -230,8 +225,7 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
     }
   }
 
-  UrlSource urlSourceFromBytes(Uint8List bytes,
-      {String mimeType = "audio/wav"}) {
+  UrlSource urlSourceFromBytes(Uint8List bytes, {String mimeType = "audio/wav"}) {
     return UrlSource(Uri.dataFromBytes(bytes, mimeType: mimeType).toString());
   }
 
@@ -275,13 +269,8 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
             setState(() {
               isVolume = false;
               var endTime = DateTime.now().toIso8601String();
-              ttsData = {
-                "id": widget.model!.id,
-                "start_time": startTime,
-                "end_time": endTime
-              };
-              provider!.addTtsData(
-                  ttsData['id'], ttsData['start_time'], ttsData['end_time']);
+              ttsData = {"id": widget.model!.id, "start_time": startTime, "end_time": endTime};
+              provider!.addTtsData(ttsData['id'], ttsData['start_time'], ttsData['end_time']);
             });
             break;
           default:
@@ -340,13 +329,8 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
     flutterTts.setCompletionHandler(() {
       stop();
       var endTime = DateTime.now().toIso8601String();
-      ttsData = {
-        "id": widget.model!.id,
-        "start_time": startTime,
-        "end_time": endTime
-      };
-      provider!.addTtsData(
-          ttsData['id'], ttsData['start_time'], ttsData['end_time']);
+      ttsData = {"id": widget.model!.id, "start_time": startTime, "end_time": endTime};
+      provider!.addTtsData(ttsData['id'], ttsData['start_time'], ttsData['end_time']);
       setState(() {});
     });
 
@@ -388,21 +372,16 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     var provider2 = Provider.of<AppProvider>(context, listen: false);
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        statusBarColor:
-            dark(context) ? ColorUtil.blogBackColor : Colors.white));
+    SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(statusBarColor: dark(context) ? ColorUtil.blogBackColor : Colors.white));
 
     var timeFormat2 = widget.model!.scheduleDate == null
         ? ''
-        : timeFormat(
-            DateTime.tryParse(widget.model!.scheduleDate!.toIso8601String()));
+        : timeFormat(DateTime.tryParse(widget.model!.scheduleDate!.toIso8601String()));
     return WillPopScope(
       onWillPop: () {
         Navigator.pushAndRemoveUntil(
-            context,
-            customPageTransisition(const DashboardPage(index: 0),
-                reverse: true),
-            (route) => false);
+            context, customPageTransisition(const DashboardPage(index: 0), reverse: true), (route) => false);
         return Future.value(false);
       },
       child: SizedBox(
@@ -419,13 +398,10 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                 isDrawerOpened = isOpened;
                 setState(() {});
               },
-              endDrawer: widget.model!.sourceLink != ''
-                  ? CustomWebView(url: widget.model!.sourceLink.toString())
-                  : null,
+              endDrawer:
+                  widget.model!.sourceLink != '' ? CustomWebView(url: widget.model!.sourceLink.toString()) : null,
               body: OrientationBuilder(builder: (context, orientation) {
-                var rectangleLogo = allSettings.value.baseImageUrl![
-                            allSettings.value.baseImageUrl!.length - 1] ==
-                        '/'
+                var rectangleLogo = allSettings.value.baseImageUrl![allSettings.value.baseImageUrl!.length - 1] == '/'
                     ? "${allSettings.value.baseImageUrl}${allSettings.value.rectangualrAppLogo}"
                     : "${allSettings.value.baseImageUrl}/${allSettings.value.rectangualrAppLogo}";
                 return SafeArea(
@@ -446,130 +422,72 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                   child: RepaintBoundary(
                                     key: previewContainer,
                                     child: Container(
-                                      color: Theme.of(context)
-                                          .scaffoldBackgroundColor,
+                                      color: Theme.of(context).scaffoldBackgroundColor,
                                       padding: EdgeInsets.symmetric(
-                                          horizontal: orientation ==
-                                                  Orientation.landscape
-                                              ? 0
-                                              : 20,
-                                          vertical: orientation ==
-                                                  Orientation.landscape
-                                              ? 0
-                                              : height10(context) + 2),
+                                          horizontal: orientation == Orientation.landscape ? 0 : 20,
+                                          vertical: orientation == Orientation.landscape ? 0 : height10(context) + 2),
                                       child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Column(
                                             children: [
                                               widget.model!.videoUrl != ''
                                                   ? RepaintBoundary(
-                                                      key: Key(
-                                                          '${widget.model!.title}${widget.index}'),
+                                                      key: Key('${widget.model!.title}${widget.index}'),
                                                       child: YouTubeVideo(
                                                         isMute: true,
                                                         isPlay: false,
-                                                        videoUrl: widget
-                                                            .model!.videoUrl,
-                                                        isFull: orientation ==
-                                                            Orientation
-                                                                .landscape,
-                                                        height: orientation ==
-                                                                Orientation
-                                                                    .landscape
-                                                            ? size(context)
-                                                                .height
-                                                            : height10(
-                                                                    context) *
-                                                                25,
+                                                        videoUrl: widget.model!.videoUrl,
+                                                        isFull: orientation == Orientation.landscape,
+                                                        height: orientation == Orientation.landscape
+                                                            ? size(context).height
+                                                            : height10(context) * 25,
                                                       ),
                                                     )
-                                                  : widget.model!.images !=
-                                                              null &&
-                                                          widget.model!.images!
-                                                                  .length >
-                                                              1
+                                                  : widget.model!.images != null && widget.model!.images!.length > 1
                                                       ? CaurosalSlider(
-                                                          model: widget.model
-                                                              as Blog,
+                                                          model: widget.model as Blog,
                                                         )
                                                       : GestureDetector(
                                                           onTap: () {
                                                             Navigator.push(
                                                                 context,
                                                                 PagingTransform(
-                                                                    widget:
-                                                                        FullScreen(
+                                                                    widget: FullScreen(
                                                                       image: widget.model!.images != null &&
-                                                                              widget
-                                                                                  .model!.images!.isNotEmpty
-                                                                          ? widget
-                                                                              .model!
-                                                                              .images![0]
-                                                                              .toString()
+                                                                              widget.model!.images!.isNotEmpty
+                                                                          ? widget.model!.images![0].toString()
                                                                           : rectangleLogo,
-                                                                      index: widget
-                                                                          .index,
-                                                                      title: widget
-                                                                          .model!
-                                                                          .title
-                                                                          .toString(),
+                                                                      index: widget.index,
+                                                                      title: widget.model!.title.toString(),
                                                                     ),
-                                                                    slideUp:
-                                                                        true));
+                                                                    slideUp: true));
                                                           },
                                                           child: Hero(
-                                                            tag: widget
-                                                                    .model!
-                                                                    .images!
-                                                                    .isEmpty
+                                                            tag: widget.model!.images!.isEmpty
                                                                 ? '${widget.index}'
                                                                 : '${widget.index}${widget.model!.images![0]}',
                                                             child: Container(
-                                                              width:
-                                                                  size(context)
-                                                                      .width,
-                                                              height: height10(
-                                                                      context) *
-                                                                  25,
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .cardColor,
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            20),
+                                                              width: size(context).width,
+                                                              height: height10(context) * 25,
+                                                              decoration: BoxDecoration(
+                                                                color: Theme.of(context).cardColor,
+                                                                borderRadius: BorderRadius.circular(20),
                                                               ),
                                                               child: ClipRRect(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            20),
-                                                                child: widget
-                                                                        .model!
-                                                                        .images!
-                                                                        .isEmpty
-                                                                    ? Image.asset(
-                                                                        Img.logo)
+                                                                borderRadius: BorderRadius.circular(20),
+                                                                child: widget.model!.images!.isEmpty
+                                                                    ? Image.asset(Img.logo)
                                                                     : CachedNetworkImage(
                                                                         // imageUrl: '',
-                                                                        imageUrl: widget.model!.images !=
-                                                                                null
+                                                                        imageUrl: widget.model!.images != null
                                                                             ? widget.model!.images![0]
                                                                             : '',
-                                                                        fit: BoxFit
-                                                                            .cover,
-                                                                        errorWidget: (context,
-                                                                            url,
-                                                                            error) {
+                                                                        fit: BoxFit.cover,
+                                                                        errorWidget: (context, url, error) {
                                                                           return const ShimmerLoader();
                                                                         },
-                                                                        placeholder:
-                                                                            (context,
-                                                                                url) {
+                                                                        placeholder: (context, url) {
                                                                           return const ShimmerLoader();
                                                                         },
                                                                       ),
@@ -577,33 +495,23 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                                             ),
                                                           ),
                                                         ),
-                                              orientation ==
-                                                      Orientation.landscape
+                                              orientation == Orientation.landscape
                                                   ? const SizedBox()
                                                   : Container(
                                                       padding: EdgeInsets.only(
-                                                          top:
-                                                              height10(context),
-                                                          bottom: height10(
-                                                              context)),
+                                                          top: height10(context), bottom: height10(context)),
                                                       child: Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                         children: [
                                                           Image.asset(
                                                             'assets/images/playstore1.png',
                                                             width: 150,
                                                           ),
                                                           CachedNetworkImage(
-                                                            imageUrl:
-                                                                rectangleLogo,
+                                                            imageUrl: rectangleLogo,
                                                             width: 120,
                                                             height: 30,
-                                                            errorWidget:
-                                                                (context, con,
-                                                                        dfg) =>
-                                                                    Image.asset(
+                                                            errorWidget: (context, con, dfg) => Image.asset(
                                                               'assets/images/com_logo.png',
                                                               width: 120,
                                                               height: 30,
@@ -616,10 +524,8 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                           orientation == Orientation.landscape
                                               ? const SizedBox()
                                               : TitleWidget(
-                                                  key: Key(
-                                                      '${widget.model!.hashCode}'),
-                                                  title: widget.model!.title
-                                                      .toString()),
+                                                  key: Key('${widget.model!.hashCode}'),
+                                                  title: widget.model!.title.toString()),
                                           // :SizedBox(key: Key('${ widget.index}')) ,
                                           // SizedBox(height: height10(context)),
                                           orientation == Orientation.landscape
@@ -628,38 +534,20 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                                   flex: 2,
                                                   // height: size(context).height*0.2875,
                                                   child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                     children: [
                                                       Expanded(
                                                         child: Description(
-                                                            optionLength: widget
-                                                                        .model!
-                                                                        .question ==
-                                                                    null
+                                                            optionLength: widget.model!.question == null
                                                                 ? 0
-                                                                : widget.model!.question!
-                                                                            .options !=
-                                                                        null
-                                                                    ? widget
-                                                                        .model!
-                                                                        .question!
-                                                                        .options!
-                                                                        .length
+                                                                : widget.model!.question!.options != null
+                                                                    ? widget.model!.question!.options!.length
                                                                     : 0,
-                                                            model:
-                                                                widget.model!,
+                                                            model: widget.model!,
                                                             isPoll: isExpand &&
-                                                                widget.model!
-                                                                        .question !=
-                                                                    null &&
-                                                                widget.model!
-                                                                        .isVotingEnable ==
-                                                                    1),
+                                                                widget.model!.question != null &&
+                                                                widget.model!.isVotingEnable == 1),
                                                       ),
                                                       Container(
                                                         padding: const EdgeInsets.only(top: 10),
@@ -668,44 +556,53 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                                             children: [
                                                               widget.model!.sourceLink == ''
                                                                   ? const WidgetSpan(
-                                                                child: SizedBox(),
-                                                              )
+                                                                      child: SizedBox(),
+                                                                    )
                                                                   : WidgetSpan(
-                                                                child: TapInk(
-                                                                  onTap: () {
-                                                                    Navigator.push(
-                                                                      context,
-                                                                      CupertinoPageRoute(
-                                                                        builder: (context) => CustomWebView(url: widget.model!.sourceLink.toString()),
+                                                                      child: TapInk(
+                                                                        onTap: () {
+                                                                          Navigator.push(
+                                                                            context,
+                                                                            CupertinoPageRoute(
+                                                                              builder: (context) => CustomWebView(
+                                                                                  url: widget.model!.sourceLink
+                                                                                      .toString()),
+                                                                            ),
+                                                                          );
+                                                                        },
+                                                                        child: Text(
+                                                                          '${widget.model!.sourceName}',
+                                                                          style: TextStyle(
+                                                                            decoration: TextDecoration.underline,
+                                                                            fontFamily: 'Roboto',
+                                                                            fontSize: 14,
+                                                                            fontWeight: FontWeight.w300,
+                                                                            color: dark(context)
+                                                                                ? ColorUtil.white
+                                                                                : ColorUtil.textgrey,
+                                                                          ),
+                                                                        ),
                                                                       ),
-                                                                    );
-                                                                  },
-                                                                  child: Text(
-                                                                    '${widget.model!.sourceName}',
-                                                                    style: TextStyle(
-                                                                      decoration: TextDecoration.underline,
-                                                                      fontFamily: 'Roboto',
-                                                                      fontSize: 14,
-                                                                      fontWeight: FontWeight.w300,
-                                                                      color: dark(context) ? ColorUtil.white : ColorUtil.textgrey,
                                                                     ),
+                                                              WidgetSpan(
+                                                                child: Text(
+                                                                  widget.model!.sourceLink == ''
+                                                                      ? timeFormat2
+                                                                      : " : $timeFormat2",
+                                                                  style: TextStyle(
+                                                                    fontFamily: 'Roboto',
+                                                                    fontSize: 14,
+                                                                    fontWeight: FontWeight.w300,
+                                                                    color: dark(context)
+                                                                        ? ColorUtil.white
+                                                                        : ColorUtil.textgrey,
                                                                   ),
                                                                 ),
-                                                              ),
-                                                              WidgetSpan(
-                                                                child: Text(widget.model!.sourceLink == '' ? timeFormat2 : " : $timeFormat2",
-                                                                    style: TextStyle(
-                                                                      fontFamily: 'Roboto',
-                                                                      fontSize: 14,
-                                                                      fontWeight: FontWeight.w300,
-                                                                      color: dark(context) ? ColorUtil.white : ColorUtil.textgrey,
-                                                                    ),),
                                                               ),
                                                             ],
                                                           ),
                                                         ),
                                                       ),
-
                                                     ],
                                                   ),
                                                 )
@@ -717,8 +614,7 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                 //  SizedBox(height: height10(context)),
                                 orientation == Orientation.landscape
                                     ? const SizedBox()
-                                    : widget.model!.question != null &&
-                                            widget.model!.isVotingEnable == 1
+                                    : widget.model!.question != null && widget.model!.isVotingEnable == 1
                                         ? BlogPoll(
                                             pollKey: previewContainer2,
                                             onChanged: (value) {
@@ -733,22 +629,11 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                     ? const SizedBox()
                                     : allSettings.value.enableFbAds == '1' &&
                                             widget.model!.question == null &&
-                                            widget.index >=
-                                                int.parse(allSettings
-                                                    .value.fbAdsFrequency
-                                                    .toString()) &&
-                                            widget.index % admobFreq +
-                                                    fbadsFreq ==
-                                                0
-                                        ? Platform.isIOS &&
-                                                allSettings.value
-                                                        .fbAdsPlacementIdIos !=
-                                                    null
+                                            widget.index >= int.parse(allSettings.value.fbAdsFrequency.toString()) &&
+                                            widget.index % admobFreq + fbadsFreq == 0
+                                        ? Platform.isIOS && allSettings.value.fbAdsPlacementIdIos != null
                                             ? facebookads(context)
-                                            : Platform.isAndroid &&
-                                                    allSettings.value
-                                                            .fbAdsPlacementIdAndroid !=
-                                                        null
+                                            : Platform.isAndroid && allSettings.value.fbAdsPlacementIdAndroid != null
                                                 ? facebookads(context)
                                                 : const SizedBox()
                                         : const SizedBox(),
@@ -757,20 +642,11 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                     ? const SizedBox()
                                     : allSettings.value.enableAds == '1' &&
                                             widget.model!.question == null &&
-                                            widget.index >=
-                                                int.parse(allSettings
-                                                    .value.admobFrequency
-                                                    .toString()) &&
+                                            widget.index >= int.parse(allSettings.value.admobFrequency.toString()) &&
                                             widget.index % admobFreq == 0
-                                        ? Platform.isIOS &&
-                                                allSettings.value
-                                                        .admobBannerIdIos !=
-                                                    null
+                                        ? Platform.isIOS && allSettings.value.admobBannerIdIos != null
                                             ? bannerAdMob(context)
-                                            : Platform.isAndroid &&
-                                                    allSettings.value
-                                                            .admobBannerIdAndroid !=
-                                                        null
+                                            : Platform.isAndroid && allSettings.value.admobBannerIdAndroid != null
                                                 ? bannerAdMob(context)
                                                 : const SizedBox()
                                         : const SizedBox(),
@@ -786,74 +662,47 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                               child: Container(
                                 width: size(context).width,
                                 alignment: Alignment.center,
-                                color:
-                                    Theme.of(context).scaffoldBackgroundColor,
+                                color: Theme.of(context).scaffoldBackgroundColor,
                                 padding: EdgeInsets.only(
-                                    top: height10(context),
-                                    bottom: height10(context),
-                                    left: 24,
-                                    right: 24),
+                                    top: height10(context), bottom: height10(context), left: 24, right: 24),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Row(
-                                      children: widget.model!.blogSubCategory !=
-                                                  null &&
-                                              widget.model!.blogSubCategory!
-                                                  .isNotEmpty
+                                      children: widget.model!.blogSubCategory != null &&
+                                              widget.model!.blogSubCategory!.isNotEmpty
                                           ? [
-                                              ...widget.model!.blogSubCategory!
-                                                  .take(1)
-                                                  .map(
+                                              ...widget.model!.blogSubCategory!.take(1).map(
                                                     (e) => CategoryWrap(
-                                                        color: hexToRgb(
-                                                            e.color.toString()),
-                                                        name:
-                                                            e.name.toString()),
+                                                        color: hexToRgb(e.color.toString()), name: e.name.toString()),
                                                   )
                                             ]
                                           : [
                                               CategoryWrap(
-                                                  color: hexToRgb(widget
-                                                      .model!.categoryColor
-                                                      .toString()),
-                                                  name: widget
-                                                      .model!.categoryName
-                                                      .toString()),
+                                                  color: hexToRgb(widget.model!.categoryColor.toString()),
+                                                  name: widget.model!.categoryName.toString()),
                                             ],
                                     ),
                                     VisibilityDetector(
                                       key: Key(widget.model!.title.toString()),
-                                      onVisibilityChanged:
-                                          (visibilityInfo) async {
+                                      onVisibilityChanged: (visibilityInfo) async {
                                         // print(isPlay);
-                                        var visiblePercentage =
-                                            visibilityInfo.visibleFraction *
-                                                100.0;
+                                        var visiblePercentage = visibilityInfo.visibleFraction * 100.0;
                                         if (visiblePercentage == 100.0) {
-                                          provider!.addviewData(
-                                              widget.model!.id!.toInt());
+                                          provider!.addviewData(widget.model!.id!.toInt());
                                         }
                                         if (visiblePercentage != 100.0) {
                                           var blogendTime = DateTime.now();
                                           provider!.addBlogTimeSpent(BlogTime(
-                                              id: widget.model!.id,
-                                              startTime: blogStartTime,
-                                              endTime: blogendTime));
+                                              id: widget.model!.id, startTime: blogStartTime, endTime: blogendTime));
                                           if (isVolume) {
                                             stop();
-                                            if (allSettings
-                                                        .value.googleApikey !=
-                                                    null &&
-                                                allSettings
-                                                        .value.isVoiceEnabled ==
-                                                    true) {
+                                            if (allSettings.value.googleApikey != null &&
+                                                allSettings.value.isVoiceEnabled == true) {
                                               stops();
                                             }
-                                            endTime = DateTime.now()
-                                                .toIso8601String();
+                                            endTime = DateTime.now().toIso8601String();
 
                                             ttsData = {
                                               "id": widget.model!.id,
@@ -862,10 +711,8 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                             };
                                             setState(() {});
                                             //WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                                            provider!.addTtsData(
-                                                ttsData['id'],
-                                                ttsData['start_time'],
-                                                ttsData['end_time']);
+                                            provider!
+                                                .addTtsData(ttsData['id'], ttsData['start_time'], ttsData['end_time']);
 
                                             //   });
                                           }
@@ -879,31 +726,19 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                       child: PostFeatureWrap(
                                           isVolume: isVolume,
                                           onVoice: () async {
-                                            if (allSettings
-                                                        .value.googleApikey !=
-                                                    null &&
-                                                allSettings
-                                                        .value.isVoiceEnabled ==
-                                                    true) {
+                                            if (allSettings.value.googleApikey != null &&
+                                                allSettings.value.isVoiceEnabled == true) {
                                               if (isVolume == false) {
                                                 isVolume = true;
-                                                if (widget.model!.audioData ==
-                                                    null) {
-                                                  await speech(parse(widget
-                                                              .model!
-                                                              .description
-                                                              .toString())
-                                                          .body!
-                                                          .text)
+                                                if (widget.model!.audioData == null) {
+                                                  await speech(parse(widget.model!.description.toString()).body!.text)
                                                       .then((value) async {
                                                     if (value != null) {
                                                       playLocal(value);
                                                     }
                                                   });
                                                 } else {
-                                                  playLocal(audioLoad ??
-                                                      widget.model!.audioData
-                                                          as Uint8List);
+                                                  playLocal(audioLoad ?? widget.model!.audioData as Uint8List);
                                                 }
                                               } else {
                                                 isVolume = true;
@@ -912,15 +747,10 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                               setState(() {});
                                             } else {
                                               if (isVolume == false) {
-                                                init(parse(widget
-                                                        .model!.description
-                                                        .toString())
-                                                    .body!
-                                                    .text);
+                                                init(parse(widget.model!.description.toString()).body!.text);
                                                 isVolume = true;
                                                 //if (startTime == '') {
-                                                startTime = DateTime.now()
-                                                    .toIso8601String();
+                                                startTime = DateTime.now().toIso8601String();
                                                 ttsData = {
                                                   "id": widget.model!.id,
                                                   "start_time": startTime,
@@ -931,8 +761,7 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                                 //  }
                                               } else {
                                                 stop();
-                                                endTime = DateTime.now()
-                                                    .toIso8601String();
+                                                endTime = DateTime.now().toIso8601String();
                                                 ttsData = {
                                                   "id": widget.model!.id,
                                                   "start_time": startTime,
@@ -942,9 +771,7 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
 
                                                 //  }
                                                 provider!.addTtsData(
-                                                    ttsData['id'],
-                                                    ttsData['start_time'],
-                                                    ttsData['end_time']);
+                                                    ttsData['id'], ttsData['start_time'], ttsData['end_time']);
                                                 isVolume = false;
                                               }
                                             }
@@ -953,62 +780,35 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                           },
                                           provider: provider2,
                                           model: widget.model as Blog,
-                                          isBookmarkContains: provider!
-                                              .permanentIds
-                                              .contains(widget.model!.id),
-                                          onBookmark: currentUser.value.id ==
-                                                  null
+                                          isBookmarkContains: provider!.permanentIds.contains(widget.model!.id),
+                                          onBookmark: currentUser.value.id == null
                                               ? () {
-                                                  Navigator.pushNamed(
-                                                      context, '/LoginPage');
+                                                  Navigator.pushNamed(context, '/LoginPage');
                                                 }
                                               : () {
-                                                  if (!provider!.permanentIds
-                                                      .contains(
-                                                          widget.model!.id)) {
+                                                  if (!provider!.permanentIds.contains(widget.model!.id)) {
                                                     showCustomToast(
-                                                        context,
-                                                        allMessages.value
-                                                                .bookmarkSave ??
-                                                            'Bookmark Saved');
-                                                    provider!.addBookmarkData(
-                                                        widget.model!.id!
-                                                            .toInt());
+                                                        context, allMessages.value.bookmarkSave ?? 'Bookmark Saved');
+                                                    provider!.addBookmarkData(widget.model!.id!.toInt());
                                                   } else {
-                                                    showCustomToast(
-                                                        context,
-                                                        allMessages.value
-                                                                .bookmarkRemove ??
-                                                            'Bookmark Removed');
-                                                    provider!
-                                                        .removeBookmarkData(
-                                                            widget.model!.id!
-                                                                .toInt());
+                                                    showCustomToast(context,
+                                                        allMessages.value.bookmarkRemove ?? 'Bookmark Removed');
+                                                    provider!.removeBookmarkData(widget.model!.id!.toInt());
                                                   }
-                                                  provider!.setBookmark(
-                                                      blog:
-                                                          widget.model as Blog);
+                                                  provider!.setBookmark(blog: widget.model as Blog);
                                                   setState(() {});
                                                 },
                                           onShare: () async {
                                             // await createDynamicLink(widget.model ?? Blog())
                                             isShare = true;
                                             setState(() {});
-                                            Future.delayed(const Duration(
-                                                milliseconds: 100));
-                                            await captureScreenshot(
-                                                    previewContainer,
-                                                    isPost: true)
-                                                .then((value) async {
-                                              Future.delayed(const Duration(
-                                                  milliseconds: 10));
-                                              final data2 =
-                                                  await convertToXFile(value!);
-                                              Future.delayed(const Duration(
-                                                  milliseconds: 10));
+                                            Future.delayed(const Duration(milliseconds: 100));
+                                            await captureScreenshot(previewContainer, isPost: true).then((value) async {
+                                              Future.delayed(const Duration(milliseconds: 10));
+                                              final data2 = await convertToXFile(value!);
+                                              Future.delayed(const Duration(milliseconds: 10));
                                               shareImage(data2);
-                                              provider!.addShareData(
-                                                  widget.model!.id!.toInt());
+                                              provider!.addShareData(widget.model!.id!.toInt());
                                               isShare = false;
                                               setState(() {});
                                             });
@@ -1025,8 +825,7 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                               left: 34,
                               width: size(context).width / 1.2,
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Backbut(
                                       key: const ValueKey('34543'),
@@ -1083,9 +882,8 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
       ),
       child: BannerAds(
         // key:  ValueKey("GoogleAds${widget.index}"),
-        adUnitId: Platform.isIOS
-            ? allSettings.value.admobBannerIdIos ?? ''
-            : allSettings.value.admobBannerIdAndroid ?? '',
+        adUnitId:
+            Platform.isIOS ? allSettings.value.admobBannerIdIos ?? '' : allSettings.value.admobBannerIdAndroid ?? '',
       ),
     );
   }
