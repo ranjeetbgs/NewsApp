@@ -59,10 +59,9 @@ class _SplashScreenState extends State<SplashScreen> {
       if (allSettings.value.enableMaintainanceMode != '1') {
         user.getLanguageFromServer(context).then((value) async {
           if (currentUser.value.id != null) {
+            bool notificationPresent = appLaunchResult != null;
             of.getCategory(gotInfo: () {
-              if (appLaunchResult != null) {
-                manageNotifications(appLaunchResult!);
-              } else {
+              if (notificationPresent == false) {
                 Future.delayed(const Duration(milliseconds: 1500)).then((v) {
                   if (appLaunchResult != null) {
                     manageNotifications(appLaunchResult!);
@@ -70,6 +69,12 @@ class _SplashScreenState extends State<SplashScreen> {
                     switchToPage();
                   }
                 });
+              }
+            }).then((v) {
+              if (appLaunchResult != null) {
+                manageNotifications(appLaunchResult!);
+              } else {
+                switchToPage();
               }
             });
           } else {
@@ -82,10 +87,9 @@ class _SplashScreenState extends State<SplashScreen> {
         });
       }
     } else {
+      bool notificationPresent = appLaunchResult != null;
       of.getCategory(gotInfo: () {
-        if (appLaunchResult != null) {
-          manageNotifications(appLaunchResult!);
-        } else {
+        if (notificationPresent == false) {
           Future.delayed(const Duration(milliseconds: 1500)).then((v) {
             if (appLaunchResult != null) {
               manageNotifications(appLaunchResult!);
@@ -93,6 +97,12 @@ class _SplashScreenState extends State<SplashScreen> {
               switchToPage();
             }
           });
+        }
+      }).then((v) {
+        if (appLaunchResult != null) {
+          manageNotifications(appLaunchResult!);
+        } else {
+          switchToPage();
         }
       });
     }
@@ -160,7 +170,7 @@ class _SplashScreenState extends State<SplashScreen> {
             if (mounted) {
               setState(() {});
             }
-            // switchToPage();
+            switchToPage();
             navkey.currentState!.pushNamed('/BlogWrap', arguments: [
               0,
               false,
@@ -176,20 +186,20 @@ class _SplashScreenState extends State<SplashScreen> {
             if (buttons.isNotEmpty && action == 'Bookmark') {
               updateBlogList(list, provider);
               provider.setNotificationLoading(false);
-              // switchToPage();
+              switchToPage();
               navkey.currentState!.pushNamed('/BlogWrap',
                   arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.bookmark, true]);
             } else if (buttons.isNotEmpty && action == 'Share') {
               updateBlogList(list, provider);
               provider.setNotificationLoading(false);
-              // switchToPage();
+              switchToPage();
               navkey.currentState!.pushNamed('/BlogWrap',
                   arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.share, true]);
             } else {
               // ignore: use_build_context_synchronously
               updateBlogList(list, provider);
               provider.setNotificationLoading(false);
-              // switchToPage();
+              switchToPage();
               navkey.currentState!
                   .pushNamed('/BlogWrap', arguments: [0, false, PreloadPageController(), "noti${list.id}", null, true]);
             }

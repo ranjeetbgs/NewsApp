@@ -54,10 +54,10 @@ class _DashboardPageState extends State<DashboardPage>
       }
 
       notificationListener = (manageNotifications);
-      if (appLaunchResult != null) {
-        manageNotifications(appLaunchResult!).then((v) {
-        });
-      }
+      // if (appLaunchResult != null) {
+      //   manageNotifications(appLaunchResult!).then((v) {
+      //   });
+      // }
     });
 
     controller = PageController(initialPage: widget.index);
