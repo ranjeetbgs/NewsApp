@@ -201,7 +201,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   manageNotifications(OSNotificationClickEvent result) async {
-
     appLaunchResult = result;
     if (notificationListener != null) {
       notificationListener!.call(result);
