@@ -24,9 +24,9 @@ import '../utils/image_util.dart';
 import '../utils/theme_util.dart';
 
 RateMyApp rateMyApp = RateMyApp(
-  preferencesPrefix: 'rateMyApp_',
+  preferencesPrefix: '${DateTime.now().millisecondsSinceEpoch}',
   minDays: 0, // Show rate popup on first day of install.
-  minLaunches: 5, // Show rate popup after 5 launches of app after minDays is passed.
+  minLaunches: 0, // Show rate popup after 5 launches of app after minDays is passed.
 );
 
 bool rateMyAppLoaded = false;
@@ -328,9 +328,12 @@ class _DrawerPageState extends State<DrawerPage> {
   void redirectToPlayStore() async {
     if (rateMyAppLoaded == true) {
       rateMyApp.showRateDialog(context);
+      // rateMyApp.launchNativeReviewDialog();
     } else {
       await rateMyApp.init();
       rateMyAppLoaded = true;
+      // rateMyApp.launchNativeReviewDialog();
+
       rateMyApp.showRateDialog(context);
     }
 
