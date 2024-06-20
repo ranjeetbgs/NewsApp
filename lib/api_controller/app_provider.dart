@@ -226,7 +226,7 @@ class AppProvider with ChangeNotifier {
           headCall: headCall,
         );
         if (gotInfo != null) {
-            gotInfo();
+          gotInfo();
         }
       }
 

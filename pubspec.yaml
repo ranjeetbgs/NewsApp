@@ -54,7 +54,8 @@ dependencies:
   # flutter_tts: ^3.2.0
   page_transition: ^2.1.0
   flutter_launcher_icons: ^0.13.1
-  rate_my_app: ^2.2.0
+#  rate_my_app: ^2.2.0
+  in_app_review: ^2.0.9
 
 dev_dependencies:
   flutter_test:

@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
+import 'package:in_app_review/in_app_review.dart';
 import 'package:incite/api_controller/app_provider.dart';
 import 'package:incite/api_controller/user_controller.dart';
 import 'package:incite/utils/app_theme.dart';
@@ -13,7 +14,7 @@ import 'package:incite/utils/color_util.dart';
 import 'package:incite/widgets/anim_util.dart';
 import 'package:incite/widgets/tap.dart';
 import 'package:provider/provider.dart';
-import 'package:rate_my_app/rate_my_app.dart';
+// import 'package:rate_my_app/rate_my_app.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../api_controller/blog_controller.dart';
@@ -23,11 +24,14 @@ import '../model/user.dart';
 import '../utils/image_util.dart';
 import '../utils/theme_util.dart';
 
-RateMyApp rateMyApp = RateMyApp(
-  preferencesPrefix: '${DateTime.now().millisecondsSinceEpoch}',
-  minDays: 0, // Show rate popup on first day of install.
-  minLaunches: 0, // Show rate popup after 5 launches of app after minDays is passed.
-);
+// RateMyApp rateMyApp = RateMyApp(
+//   preferencesPrefix: '${DateTime.now().millisecondsSinceEpoch}',
+//   minDays: 0, // Show rate popup on first day of install.
+//   minLaunches: 0, // Show rate popup after 5 launches of app after minDays is passed.
+// );
+
+
+final InAppReview inAppReview = InAppReview.instance;
 
 bool rateMyAppLoaded = false;
 
@@ -58,9 +62,9 @@ class _DrawerPageState extends State<DrawerPage> {
   void initState() {
     super.initState();
     if (rateMyAppLoaded == false) {
-      rateMyApp.init().then((v) {
-        rateMyAppLoaded = true;
-      });
+      // rateMyApp.init().then((v) {
+      //   rateMyAppLoaded = true;
+      // });
     }
   }
 
@@ -326,16 +330,20 @@ class _DrawerPageState extends State<DrawerPage> {
   }
 
   void redirectToPlayStore() async {
-    if (rateMyAppLoaded == true) {
-      rateMyApp.showRateDialog(context);
-      // rateMyApp.launchNativeReviewDialog();
-    } else {
-      await rateMyApp.init();
-      rateMyAppLoaded = true;
-      // rateMyApp.launchNativeReviewDialog();
 
-      rateMyApp.showRateDialog(context);
+    if (await inAppReview.isAvailable()) {
+      inAppReview.requestReview();
     }
+    // if (rateMyAppLoaded == true) {
+    //   rateMyApp.showRateDialog(context);
+    //   // rateMyApp.launchNativeReviewDialog();
+    // } else {
+    //   await rateMyApp.init();
+    //   rateMyAppLoaded = true;
+    //   // rateMyApp.launchNativeReviewDialog();
+    //
+    //   rateMyApp.showRateDialog(context);
+    // }
 
     // @override
     // void initState() {
