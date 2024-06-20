@@ -332,7 +332,7 @@ class _DrawerPageState extends State<DrawerPage> {
   void redirectToPlayStore() async {
 
     if (await inAppReview.isAvailable()) {
-      // inAppReview.requestReview();
+      inAppReview.requestReview();
       inAppReview.openStoreListing(
         appStoreId: 'com.newspepper.app',
         microsoftStoreId: 'com.newspepper.app',
