@@ -333,6 +333,10 @@ class _DrawerPageState extends State<DrawerPage> {
 
     if (await inAppReview.isAvailable()) {
       inAppReview.requestReview();
+      // inAppReview.openStoreListing(
+      //   appStoreId: 'com.newspepper.app',
+      //   microsoftStoreId: 'com.newspepper.app',
+      // );
     }
     // if (rateMyAppLoaded == true) {
     //   rateMyApp.showRateDialog(context);
