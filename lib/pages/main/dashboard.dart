@@ -53,7 +53,12 @@ class _DashboardPageState extends State<DashboardPage>
         }
       }
 
-      notificationListener = (manageNotifications);
+      notificationListener = ((v){
+        manageNotifications(v);
+      });
+      manageFromProvider ??= ((v){
+        manageNotifications(v, routing: false);
+      });
       // if (appLaunchResult != null) {
       //   manageNotifications(appLaunchResult!).then((v) {
       //   });
@@ -72,12 +77,12 @@ class _DashboardPageState extends State<DashboardPage>
     ManageLocalData.saveToLocal(key: url, value: result.body);
   }
 
-  Future manageNotifications(OSNotificationClickEvent result) async {
+  Future manageNotifications(OSNotificationClickEvent result, {bool routing = true}) async {
     log("Got Push Notification.........      ${result.notification.title}");
     log("Got Push Notification.........      ${result.notification.body}");
     log("Got Push Notification.........      ${result.notification.rawPayload}");
     log("Got Push Notification.........      ${result.notification.buttons}");
-    final blog = json.decode(result.notification.rawPayload!['custom'].toString())['a']['blog'];
+    final blog = Platform.isIOS ? result.notification.rawPayload!['custom']['a']['blog'] : jsonDecode(result.notification.rawPayload!['custom'].toString())['a']['blog'];
     final buttons = result.notification.buttons!.toList();
     final action = result.notification.rawPayload!['actionId'];
     //  WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -140,6 +145,7 @@ class _DashboardPageState extends State<DashboardPage>
             if (mounted) {
               setState(() {});
             }
+            if(routing){
             navkey.currentState!.pushNamed('/BlogWrap', arguments: [
               0,
               false,
@@ -148,6 +154,7 @@ class _DashboardPageState extends State<DashboardPage>
               action == 'Share' ? BlogOptionType.share : null,
               true
             ]);
+            }
           } else {
             if (list.images!.isNotEmpty) {
               await precacheImage(CachedNetworkImageProvider(list.images![0]), context);
@@ -155,25 +162,28 @@ class _DashboardPageState extends State<DashboardPage>
             if (buttons.isNotEmpty && action == 'Bookmark') {
               updateBlogList(list, provider);
               provider.setNotificationLoading(false);
-              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+
+              if(routing) {
                 navkey.currentState!.pushNamed('/BlogWrap',
                     arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.bookmark, true]);
-              });
+              }
             } else if (buttons.isNotEmpty && action == 'Share') {
               updateBlogList(list, provider);
               provider.setNotificationLoading(false);
-              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+
+              if(routing) {
                 navkey.currentState!.pushNamed('/BlogWrap',
                     arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.share, true]);
-              });
+              }
             } else {
               // ignore: use_build_context_synchronously
               updateBlogList(list, provider);
               provider.setNotificationLoading(false);
-              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+
+              if(routing) {
                 navkey.currentState!.pushNamed('/BlogWrap',
                     arguments: [0, false, PreloadPageController(), "noti${list.id}", null, true]);
-              });
+              }
             }
           }
         }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
@@ -108,12 +109,12 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
-  Future manageNotifications(OSNotificationClickEvent result) async {
+  Future manageNotifications(OSNotificationClickEvent result, {bool routing = true}) async {
     log("Got Push Notification.........      ${result.notification.title}");
     log("Got Push Notification.........      ${result.notification.body}");
     log("Got Push Notification.........      ${result.notification.rawPayload}");
     log("Got Push Notification.........      ${result.notification.buttons}");
-    final blog = json.decode(result.notification.rawPayload!['custom'].toString())['a']['blog'];
+    final blog = Platform.isIOS ? result.notification.rawPayload!['custom']['a']['blog'] : jsonDecode(result.notification.rawPayload!['custom'].toString())['a']['blog'];
     final buttons = result.notification.buttons!.toList();
     final action = result.notification.rawPayload!['actionId'];
     //  WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -241,11 +242,13 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   switchToPage() {
-    //   if (prefs!.containsKey('maintain') && prefs!.getBool('maintain') == false) {
-    if (currentUser.value.id != null) {
-      Navigator.pushNamedAndRemoveUntil(context, '/MainPage', arguments: 1, (route) => false);
-    } else {
-      Navigator.pushNamedAndRemoveUntil(context, '/MainPage', (route) => false);
+    if (mounted) {
+      //   if (prefs!.containsKey('maintain') && prefs!.getBool('maintain') == false) {
+      if (currentUser.value.id != null) {
+        Navigator.pushNamedAndRemoveUntil(context, '/MainPage', arguments: 1, (route) => false);
+      } else {
+        Navigator.pushNamedAndRemoveUntil(context, '/MainPage', (route) => false);
+      }
       //   // if (!prefs!.containsKey('local_data')) {
       //   //      Navigator.pushNamedAndRemoveUntil(context, '/GetStarted',(route) => false);
       //   //   }else{

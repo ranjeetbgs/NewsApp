@@ -3,18 +3,28 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/widgets.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:incite/api_controller/user_controller.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../model/analytic.dart';
 import '../model/blog.dart';
+import '../pages/main/blog_wrap.dart';
 import '../splash_screen.dart';
 import '../urls/url.dart';
 import 'blog_controller.dart';
 
 DateTime? signInStart;
 DateTime? signInEnd;
+
+void showToast(String message) {
+  return;
+  if(foundation.kDebugMode){
+    Fluttertoast.showToast(msg: message);
+  }
+}
 
 class AppProvider with ChangeNotifier {
   updateUI() {
@@ -357,6 +367,13 @@ class AppProvider with ChangeNotifier {
 
         // flipController.stream.asBroadcastStream();
       }
+      showToast("Updated List..........................");
+      if(manageFromProvider != null && appLaunchResultProvider != null){
+        manageFromProvider!(appLaunchResultProvider!);
+        appLaunchResultProvider = null;
+      }
+      // print("Updated List..........................");
+
       notifyListeners();
     } on SocketException {
       getCacheBlog();
