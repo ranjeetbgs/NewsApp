@@ -831,8 +831,21 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                       key: const ValueKey('34543'),
                                       onTap: widget.onTap ??
                                           () {
-                                            Navigator.pop(context);
-                                            Navigator.pop(context);
+                                            if (Navigator.canPop(context)) {
+                                              Navigator.pop(context);
+                                            }
+                                            if (Navigator.canPop(context)) {
+                                              Navigator.pop(context);
+                                            }
+                                            if (Navigator.canPop(context)) {
+                                              Navigator.pop(context);
+                                            }
+                                            if (Navigator.canPop(context)) {
+                                              Navigator.pop(context);
+                                            }
+                                            if (Navigator.canPop(context)) {
+                                              Navigator.pop(context);
+                                            }
                                           }),
                                   //  TapInk(
                                   // pad: 4,
