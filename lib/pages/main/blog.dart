@@ -832,6 +832,8 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                       onTap: widget.onTap ??
                                           () {
                                             Navigator.pop(context);
+                                            Navigator.pop(context);
+                                            Navigator.pop(context);
                                           }),
                                   //  TapInk(
                                   // pad: 4,
