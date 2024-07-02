@@ -833,7 +833,6 @@ class _BlogPageState extends State<BlogPage> with WidgetsBindingObserver {
                                           () {
                                             Navigator.pop(context);
                                             Navigator.pop(context);
-                                            Navigator.pop(context);
                                           }),
                                   //  TapInk(
                                   // pad: 4,
