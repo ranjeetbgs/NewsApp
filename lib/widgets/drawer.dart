@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
+import 'package:in_app_review/in_app_review.dart';
 import 'package:incite/api_controller/app_provider.dart';
 import 'package:incite/api_controller/user_controller.dart';
 import 'package:incite/utils/app_theme.dart';
@@ -13,6 +14,7 @@ import 'package:incite/utils/color_util.dart';
 import 'package:incite/widgets/anim_util.dart';
 import 'package:incite/widgets/tap.dart';
 import 'package:provider/provider.dart';
+// import 'package:rate_my_app/rate_my_app.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../api_controller/blog_controller.dart';
@@ -21,6 +23,17 @@ import '../model/home.dart';
 import '../model/user.dart';
 import '../utils/image_util.dart';
 import '../utils/theme_util.dart';
+
+// RateMyApp rateMyApp = RateMyApp(
+//   preferencesPrefix: '${DateTime.now().millisecondsSinceEpoch}',
+//   minDays: 0, // Show rate popup on first day of install.
+//   minLaunches: 0, // Show rate popup after 5 launches of app after minDays is passed.
+// );
+
+
+final InAppReview inAppReview = InAppReview.instance;
+
+bool rateMyAppLoaded = false;
 
 class DrawerPage extends StatefulWidget {
   const DrawerPage({super.key});
@@ -34,20 +47,13 @@ class _DrawerPageState extends State<DrawerPage> {
   var userProvider = UserProvider();
 
   List<HomeModel> drawer = [
-    HomeModel(
-        title: allMessages.value.dashboard ?? 'Dashboard', image: SvgImg.dash),
-    HomeModel(
-        title: allMessages.value.myProfile ?? 'My Profile',
-        image: SvgImg.profile),
-    HomeModel(
-        title: allMessages.value.myStories ?? 'My Stories',
-        image: SvgImg.fillBook),
+    HomeModel(title: allMessages.value.dashboard ?? 'Dashboard', image: SvgImg.dash),
+    HomeModel(title: allMessages.value.myProfile ?? 'My Profile', image: SvgImg.profile),
+    HomeModel(title: allMessages.value.myStories ?? 'My Stories', image: SvgImg.fillBook),
     HomeModel(title: allMessages.value.myFeed ?? 'My Feed', image: SvgImg.dash),
-    HomeModel(
-        title: allMessages.value.settings ?? 'Settings', image: SvgImg.setting),
+    HomeModel(title: allMessages.value.settings ?? 'Settings', image: SvgImg.setting),
     HomeModel(title: allMessages.value.rateUs ?? 'Rate Us', image: SvgImg.star),
-    HomeModel(
-        title: allMessages.value.logout ?? 'Sign Out', image: SvgImg.logout),
+    HomeModel(title: allMessages.value.logout ?? 'Sign Out', image: SvgImg.logout),
     HomeModel(title: allMessages.value.login ?? 'Sign in', image: SvgImg.lock),
     HomeModel(title: allMessages.value.darkMode ?? 'Dark Mode', image: ''),
   ];
@@ -55,6 +61,11 @@ class _DrawerPageState extends State<DrawerPage> {
   @override
   void initState() {
     super.initState();
+    if (rateMyAppLoaded == false) {
+      // rateMyApp.init().then((v) {
+      //   rateMyAppLoaded = true;
+      // });
+    }
   }
 
   @override
@@ -64,53 +75,30 @@ class _DrawerPageState extends State<DrawerPage> {
         width: size(context).width * 0.75,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.only(
-          topRight: languageCode.value.pos == 'rtl'
-              ? Radius.zero
-              : const Radius.circular(20),
-          bottomRight: languageCode.value.pos == 'rtl'
-              ? Radius.zero
-              : const Radius.circular(20),
-          topLeft: languageCode.value.pos == 'rtl'
-              ? const Radius.circular(20)
-              : Radius.zero,
-          bottomLeft: languageCode.value.pos == 'rtl'
-              ? const Radius.circular(20)
-              : Radius.zero,
+          topRight: languageCode.value.pos == 'rtl' ? Radius.zero : const Radius.circular(20),
+          bottomRight: languageCode.value.pos == 'rtl' ? Radius.zero : const Radius.circular(20),
+          topLeft: languageCode.value.pos == 'rtl' ? const Radius.circular(20) : Radius.zero,
+          bottomLeft: languageCode.value.pos == 'rtl' ? const Radius.circular(20) : Radius.zero,
         )),
         child: Container(
           decoration: const BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                  offset: Offset(20, 24),
-                  blurRadius: 50,
-                  color: Color.fromRGBO(6, 0, 45, 0.25))
-            ],
+            boxShadow: [BoxShadow(offset: Offset(20, 24), blurRadius: 50, color: Color.fromRGBO(6, 0, 45, 0.25))],
           ),
           child: BackdropFilter(
-            filter: ImageFilter.blur(
-                sigmaX: 5, sigmaY: 5), // Adjust blur radius as needed
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5), // Adjust blur radius as needed
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.only(
-                  topRight: languageCode.value.pos == 'rtl'
-                      ? Radius.zero
-                      : const Radius.circular(20),
-                  bottomRight: languageCode.value.pos == 'rtl'
-                      ? Radius.zero
-                      : const Radius.circular(20),
-                  topLeft: languageCode.value.pos == 'rtl'
-                      ? const Radius.circular(20)
-                      : Radius.zero,
-                  bottomLeft: languageCode.value.pos == 'rtl'
-                      ? const Radius.circular(20)
-                      : Radius.zero,
+                  topRight: languageCode.value.pos == 'rtl' ? Radius.zero : const Radius.circular(20),
+                  bottomRight: languageCode.value.pos == 'rtl' ? Radius.zero : const Radius.circular(20),
+                  topLeft: languageCode.value.pos == 'rtl' ? const Radius.circular(20) : Radius.zero,
+                  bottomLeft: languageCode.value.pos == 'rtl' ? const Radius.circular(20) : Radius.zero,
                 ),
                 color: dark(context)
                     ? Theme.of(context).scaffoldBackgroundColor
                     : Colors.white, // Set desired drawer color and opacity
               ),
-              padding: const EdgeInsets.only(
-                  left: 24, top: 16, bottom: 16, right: 20),
+              padding: const EdgeInsets.only(left: 24, top: 16, bottom: 16, right: 20),
               child: SingleChildScrollView(
                 child: Column(
                   children: [
@@ -128,36 +116,25 @@ class _DrawerPageState extends State<DrawerPage> {
                             AnimationFadeSlide(
                               dx: 0.5,
                               duration: 300,
-                              child: Text(
-                                  currentUser.value.id == null
-                                      ? 'Guest'
-                                      : currentUser.value.name ?? 'Rahul',
+                              child: Text(currentUser.value.id == null ? 'Guest' : currentUser.value.name ?? 'Rahul',
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                       fontFamily: 'Roboto',
                                       fontSize: 20,
                                       fontWeight: FontWeight.w600,
-                                      color: dark(context)
-                                          ? ColorUtil.white
-                                          : ColorUtil.textblack)),
+                                      color: dark(context) ? ColorUtil.white : ColorUtil.textblack)),
                             ),
-                            currentUser.value.id == null
-                                ? const SizedBox()
-                                : const SizedBox(height: 8),
+                            currentUser.value.id == null ? const SizedBox() : const SizedBox(height: 8),
                             currentUser.value.id == null
                                 ? const SizedBox()
                                 : AnimationFadeSlide(
                                     dx: 0.65,
                                     duration: 400,
-                                    child: Text(
-                                        currentUser.value.email ??
-                                            'guest@mail.com',
+                                    child: Text(currentUser.value.email ?? 'guest@mail.com',
                                         style: TextStyle(
                                             fontFamily: 'Roboto',
                                             fontSize: 13,
-                                            color: dark(context)
-                                                ? ColorUtil.lightGrey
-                                                : ColorUtil.textgrey)),
+                                            color: dark(context) ? ColorUtil.lightGrey : ColorUtil.textgrey)),
                                   ),
                           ],
                         )
@@ -168,77 +145,60 @@ class _DrawerPageState extends State<DrawerPage> {
                       child: Divider(
                           height: 0,
                           thickness: 0.5,
-                          color: dark(context)
-                              ? Theme.of(context).dividerColor
-                              : ColorUtil.textgrey),
+                          color: dark(context) ? Theme.of(context).dividerColor : ColorUtil.textgrey),
                     ),
-                    ...drawer.asMap().entries.map((e) => (e.key == 3 ||
-                                e.key == 1 ||
-                                e.key == 2) &&
-                            currentUser.value.id == null
-                        ? const SizedBox()
-                        : e.key == 6 && currentUser.value.id == null
+                    ...drawer.asMap().entries.map((e) =>
+                        (e.key == 3 || e.key == 1 || e.key == 2) && currentUser.value.id == null
                             ? const SizedBox()
-                            : e.key == 7 && currentUser.value.id != null
+                            : e.key == 6 && currentUser.value.id == null
                                 ? const SizedBox()
-                                : DrawWrap(
-                                    pos: e.key,
-                                    title: e.value.title,
-                                    suffix: e.value.title == 'Dark Mode'
-                                        ? ToggleButton(
-                                            isON: appThemeModel
-                                                .value.isDarkModeEnabled.value)
-                                        : null,
-                                    image: e.value.image,
-                                    onTap: () {
-                                      switch (e.key) {
-                                        case 8:
-                                          toggleDarkMode(!appThemeModel
-                                              .value.isDarkModeEnabled.value);
-                                          setState(() {});
-                                          break;
-                                        case 0:
-                                          Navigator.pop(context);
-                                          break;
-                                        case 1:
-                                          Navigator.pushNamed(
-                                              context, '/UserProfile',
-                                              arguments: true);
-                                          break;
-                                        case 3:
-                                          Navigator.pushNamed(
-                                              context, '/SaveInterests',
-                                              arguments: true);
-                                          break;
-                                        case 2:
-                                          blogListHolder2.clearList();
-                                          blogListHolder2.setList(DataModel(
-                                              blogs: provider.bookmarks));
-                                          blogListHolder2
-                                              .setBlogType(BlogType.bookmarks);
-                                          setState(() {});
-                                          Navigator.pushNamed(
-                                                  context, '/SavedPage')
-                                              .then((value) {});
-                                          break;
-                                        case 4:
-                                          Navigator.pushNamed(
-                                              context, '/SettingPage');
-                                          break;
-                                        case 5:
-                                          redirectToPlayStore();
-                                          break;
-                                        case 7:
-                                          Navigator.pushNamed(
-                                              context, '/LoginPage');
-                                          break;
-                                        case 6:
-                                          userProvider.logout(context);
-                                          setState(() {});
-                                          break;
-                                        default:
-                                      }
-                                    })),
+                                : e.key == 7 && currentUser.value.id != null
+                                    ? const SizedBox()
+                                    : DrawWrap(
+                                        pos: e.key,
+                                        title: e.value.title,
+                                        suffix: e.value.title == 'Dark Mode'
+                                            ? ToggleButton(isON: appThemeModel.value.isDarkModeEnabled.value)
+                                            : null,
+                                        image: e.value.image,
+                                        onTap: () {
+                                          switch (e.key) {
+                                            case 8:
+                                              toggleDarkMode(!appThemeModel.value.isDarkModeEnabled.value);
+                                              setState(() {});
+                                              break;
+                                            case 0:
+                                              Navigator.pop(context);
+                                              break;
+                                            case 1:
+                                              Navigator.pushNamed(context, '/UserProfile', arguments: true);
+                                              break;
+                                            case 3:
+                                              Navigator.pushNamed(context, '/SaveInterests', arguments: true);
+                                              break;
+                                            case 2:
+                                              blogListHolder2.clearList();
+                                              blogListHolder2.setList(DataModel(blogs: provider.bookmarks));
+                                              blogListHolder2.setBlogType(BlogType.bookmarks);
+                                              setState(() {});
+                                              Navigator.pushNamed(context, '/SavedPage').then((value) {});
+                                              break;
+                                            case 4:
+                                              Navigator.pushNamed(context, '/SettingPage');
+                                              break;
+                                            case 5:
+                                              redirectToPlayStore();
+                                              break;
+                                            case 7:
+                                              Navigator.pushNamed(context, '/LoginPage');
+                                              break;
+                                            case 6:
+                                              userProvider.logout(context);
+                                              setState(() {});
+                                              break;
+                                            default:
+                                          }
+                                        })),
                     const SizedBox(height: 20),
                     ValueListenableBuilder<List<SocialMedia>>(
                         valueListenable: socialMedia,
@@ -253,18 +213,12 @@ class _DrawerPageState extends State<DrawerPage> {
                                   value.length,
                                   (index) => InkResponse(
                                         onTap: () {
-                                          openWhatsApp(value[index]
-                                              .url!
-                                              .split('=')
-                                              .last);
+                                          openWhatsApp(value[index].url!.split('=').last);
                                         },
                                         child: SizedBox(
                                           width: 30,
                                           height: 30,
-                                          child: Icon(
-                                              getTabIcons(
-                                                  value[index].name.toString()),
-                                              size: 28),
+                                          child: Icon(getTabIcons(value[index].name.toString()), size: 28),
                                         ),
                                       ))
                             ],
@@ -376,16 +330,47 @@ class _DrawerPageState extends State<DrawerPage> {
   }
 
   void redirectToPlayStore() async {
-    // Create the Play Store deep link URL
-    final String url = Platform.isAndroid
-        ? 'https://play.google.com/store/apps/details?id=com.newspepper.app'
-        : allMessages.value.rateUsIos.toString();
 
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
-    } else {
-      throw 'Could not launch $url';
+    if (await inAppReview.isAvailable()) {
+      inAppReview.requestReview();
+      inAppReview.openStoreListing(
+        appStoreId: 'com.newspepper.app',
+        microsoftStoreId: 'com.newspepper.app',
+      );
     }
+    // if (rateMyAppLoaded == true) {
+    //   rateMyApp.showRateDialog(context);
+    //   // rateMyApp.launchNativeReviewDialog();
+    // } else {
+    //   await rateMyApp.init();
+    //   rateMyAppLoaded = true;
+    //   // rateMyApp.launchNativeReviewDialog();
+    //
+    //   rateMyApp.showRateDialog(context);
+    // }
+
+    // @override
+    // void initState() {
+    //   super.initState();
+    //
+    //   WidgetsBinding.instance.addPostFrameCallback((_) async {
+    //     await rateMyApp.init();
+    //     if (mounted && rateMyApp.shouldOpenDialog) {
+    //       rateMyApp.showRateDialog(context);
+    //     }
+    //   });
+    // }
+
+    // Create the Play Store deep link URL
+    // final String url = Platform.isAndroid
+    //     ? 'https://play.google.com/store/apps/details?id=com.newspepper.app'
+    //     : allMessages.value.rateUsIos.toString();
+    //
+    // if (await canLaunchUrl(Uri.parse(url))) {
+    //   await launchUrl(Uri.parse(url));
+    // } else {
+    //   throw 'Could not launch $url';
+    // }
   }
 }
 
@@ -422,30 +407,24 @@ class ProfileWidget extends StatelessWidget {
       child: currentUser.value.id != null && currentUser.value.photo != ''
           ? CircleAvatar(
               radius: radius ?? 35,
-              backgroundImage:
-                  CachedNetworkImageProvider(currentUser.value.photo),
+              backgroundImage: CachedNetworkImageProvider(currentUser.value.photo),
             )
           : currentUser.value.id != null
               ? CircleAvatar(
                   radius: radius ?? 35,
-                  backgroundColor:
-                      Theme.of(context).primaryColor.withOpacity(0.3),
-                  child: Text(
-                      currentUser.value.name != ''
-                          ? currentUser.value.name!.split(' ').first[0]
-                          : 'G',
+                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.3),
+                  child: Text(currentUser.value.name != '' ? currentUser.value.name!.split(' ').first[0] : 'G',
                       style: TextStyle(
                           fontFamily: 'Roboto',
                           fontSize: size ?? 28,
-                          color: isBlack(Theme.of(context).primaryColor)
-                              ? Colors.white
-                              : Theme.of(context).primaryColor,
+                          color:
+                              isBlack(Theme.of(context).primaryColor) ? Colors.white : Theme.of(context).primaryColor,
                           fontWeight: FontWeight.w600)),
                 )
               : CircleAvatar(
                   radius: radius ?? 35,
-                  backgroundImage: CachedNetworkImageProvider(
-                      "${allSettings.value.baseImageUrl}/${allSettings.value.appLogo}")),
+                  backgroundImage:
+                      CachedNetworkImageProvider("${allSettings.value.baseImageUrl}/${allSettings.value.appLogo}")),
     );
   }
 }
@@ -513,11 +492,8 @@ class DrawWrap extends StatelessWidget {
             Container(
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(50),
-                  color: dark(context)
-                      ? Theme.of(context).cardColor
-                      : ColorUtil.whiteGrey),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12.5),
+                  color: dark(context) ? Theme.of(context).cardColor : ColorUtil.whiteGrey),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12.5),
               child: Row(
                 children: [
                   image == ''
@@ -526,27 +502,19 @@ class DrawWrap extends StatelessWidget {
                           image ?? SvgImg.dash,
                           width: 24,
                           height: 24,
-                          color: dark(context)
-                              ? ColorUtil.white
-                              : ColorUtil.textblack,
+                          color: dark(context) ? ColorUtil.white : ColorUtil.textblack,
                         ),
                   image == '' ? const SizedBox() : const SizedBox(width: 15),
                   Text(title ?? 'data',
-                      style: const TextStyle(
-                          fontFamily: 'Roboto',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500)),
+                      style: const TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: FontWeight.w500)),
                   image == '' ? const Spacer() : const SizedBox(),
                   suffix ?? const SizedBox()
                 ],
               ),
             ),
             Positioned.fill(
-                child: TapInk(
-                    onTap: onTap,
-                    splash: Theme.of(context).primaryColor,
-                    radius: 50,
-                    child: const SizedBox()))
+                child:
+                    TapInk(onTap: onTap, splash: Theme.of(context).primaryColor, radius: 50, child: const SizedBox()))
           ],
         ),
       ),

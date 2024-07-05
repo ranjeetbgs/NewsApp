@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:facebook_audience_network/ad/ad_interstitial.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:incite/api_controller/blog_controller.dart';
+import 'package:incite/api_controller/manage_local.dart';
 import 'package:incite/api_controller/user_controller.dart';
 import 'package:incite/model/home.dart';
 import 'package:incite/pages/main/widgets/quotes.dart';
@@ -16,16 +19,23 @@ import 'package:incite/widgets/button.dart';
 import 'package:incite/widgets/custom_toast.dart';
 import 'package:incite/widgets/last_widget.dart';
 import 'package:incite/widgets/swipe_physics.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:provider/provider.dart';
 import '../../api_controller/app_provider.dart';
 import '../../api_controller/repository.dart';
 import '../../main.dart';
 import '../../model/blog.dart';
+import '../../urls/url.dart';
 import '../../utils/theme_util.dart';
 import 'blog.dart';
 import 'package:http/http.dart' as http;
 import 'widgets/blog_ad.dart';
+
+Function(OSNotificationClickEvent result)? notificationListener;
+Function(OSNotificationClickEvent result)? manageFromProvider;
+OSNotificationClickEvent? appLaunchResult;
+OSNotificationClickEvent? appLaunchResultProvider;
 
 class BlogWrapPage extends StatefulWidget {
   const BlogWrapPage(
@@ -47,8 +57,7 @@ class BlogWrapPage extends StatefulWidget {
   State<BlogWrapPage> createState() => _BlogWrapPageState();
 }
 
-class _BlogWrapPageState extends State<BlogWrapPage>
-    with AutomaticKeepAliveClientMixin {
+class _BlogWrapPageState extends State<BlogWrapPage> with AutomaticKeepAliveClientMixin {
   int cur = 0;
   // PreloadPageController preloadPageController = PreloadPageController();
 
@@ -57,8 +66,8 @@ class _BlogWrapPageState extends State<BlogWrapPage>
   bool isData = true;
 
   bool isInterstialLoaded = false;
-  int fbAdindex = int.parse(allSettings.value.fbAdsFrequency.toString()) +
-      int.parse(allSettings.value.admobFrequency.toString());
+  int fbAdindex =
+      int.parse(allSettings.value.fbAdsFrequency.toString()) + int.parse(allSettings.value.admobFrequency.toString());
   int adindex = int.parse(allSettings.value.admobFrequency.toString());
 
   InterstitialAd? _interstitialAd;
@@ -76,16 +85,23 @@ class _BlogWrapPageState extends State<BlogWrapPage>
       if (blogListHolder.getList().blogs.isNotEmpty &&
           blogListHolder.getList().blogs[0].images != null &&
           blogListHolder.getList().blogs[0].images!.isNotEmpty) {
-        await precacheImage(
-            CachedNetworkImageProvider(
-                blogListHolder.getList().blogs[0].images![0]),
-            context);
+        await precacheImage(CachedNetworkImageProvider(blogListHolder.getList().blogs[0].images![0]), context);
       }
-      if (widget.isBookmark == true &&
-          widget.preloadPageController!.hasClients) {
+      if (widget.isBookmark == true && widget.preloadPageController!.hasClients) {
         widget.preloadPageController!.jumpToPage(widget.index);
       } else if (blogListHolder.blogType == BlogType.featured) {
         widget.preloadPageController!.jumpToPage(widget.index);
+      }
+      notificationListener ??= ((v){
+        manageNotifications(v);
+      });
+      manageFromProvider ??= ((v){
+        manageNotifications(v);
+      });
+      if (appLaunchResult != null) {
+        manageNotifications(appLaunchResult!).then((v) {
+          appLaunchResult = null;
+        });
       }
     });
     if (Platform.isAndroid &&
@@ -94,12 +110,139 @@ class _BlogWrapPageState extends State<BlogWrapPage>
       _loadInterstitialAd();
     }
 
-    if (Platform.isIOS &&
-        allSettings.value.enableFbAds == '1' &&
-        allSettings.value.fbAdsPlacementIdIos != null) {
+    if (Platform.isIOS && allSettings.value.enableFbAds == '1' && allSettings.value.fbAdsPlacementIdIos != null) {
       _loadInterstitialAd();
     }
     // cur = blogListHolder.getIndex();
+  }
+
+  updateLocals(String url) async {
+    var result = await http.get(
+      Uri.parse(url),
+    );
+    log("Got info....     ${result.body}");
+    ManageLocalData.saveToLocal(key: url, value: result.body);
+  }
+
+  Future manageNotifications(OSNotificationClickEvent result, {bool routing = true}) async {
+    log("Got Push Notification.........      ${result.notification.title}");
+    log("Got Push Notification.........      ${result.notification.body}");
+    log("Got Push Notification.........      ${result.notification.rawPayload}");
+    log("Got Push Notification.........      ${result.notification.buttons}");
+    final blog = Platform.isIOS ? result.notification.rawPayload!['custom']['a']['blog'] : jsonDecode(result.notification.rawPayload!['custom'].toString())['a']['blog'];
+    final buttons = result.notification.buttons!.toList();
+    final action = result.notification.rawPayload!['actionId'];
+    //  WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+    var provider = Provider.of<AppProvider>(navkey.currentState!.context, listen: false);
+
+    if (blog != null) {
+      try {
+        provider.setNotificationLoading(true);
+
+        String? ress;
+
+        var url = "${Urls.baseUrl}blog-detail/$blog";
+
+        final localNewsData = await ManageLocalData.getFromLocal(url);
+        if (localNewsData != null) {
+          ress = localNewsData;
+          updateLocals(url);
+          log("Got From Local......  ");
+        } else {
+          var result = await http.get(
+            Uri.parse(url),
+          );
+          log("Got info....     ${result.body}");
+          ManageLocalData.saveToLocal(key: url, value: result.body);
+          ress = result.body;
+        }
+        // if(result.statusCode == 200) {
+        //   ManageLocalData.saveToLocal(key: url, value: result.body);
+        // }
+
+        Map data = await json.decode(ress);
+        if (data['success'] == true) {
+          final list = Blog.fromJson(data['data'], isNotification: true);
+          // print(list.type);
+
+          if (list.type == 'quote') {
+            var data = provider.allNews!.blogs;
+            provider.allNews!.blogs = [];
+            provider.allNews!.blogs.add(list);
+            if (data.isNotEmpty && data.contains(list)) {
+              data.remove(list);
+            }
+            provider.allNews!.blogs.addAll(data);
+            blogListHolder.clearList();
+            blogListHolder.setBlogType(BlogType.allnews);
+            blogListHolder.setList(provider.allNews as DataModel);
+            provider.updateUI();
+            provider.setNotificationLoading(false);
+            if (mounted) {
+              setState(() {});
+            }
+            Navigator.pop(context);
+
+            // if(routing) {
+            //   navkey.currentState!.pushNamed('/BlogWrap', arguments: [
+            //     0,
+            //     false,
+            //     PreloadPageController(),
+            //     "noti${list.id}",
+            //     action == 'Share' ? BlogOptionType.share : null,
+            //     true
+            //   ]);
+            // }
+          } else {
+            if (list.images!.isNotEmpty) {
+              await precacheImage(CachedNetworkImageProvider(list.images![0]), context);
+            }
+            if (buttons.isNotEmpty && action == 'Bookmark') {
+              updateBlogList(list, provider);
+              provider.setNotificationLoading(false);
+                // navkey.currentState!.pushNamed('/BlogWrap',
+                //     arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.bookmark, true]);
+            } else if (buttons.isNotEmpty && action == 'Share') {
+              updateBlogList(list, provider);
+              provider.setNotificationLoading(false);
+                // navkey.currentState!.pushNamed('/BlogWrap',
+                //     arguments: [0, false, PreloadPageController(), "noti${list.id}", BlogOptionType.share, true]);
+
+            } else {
+              // ignore: use_build_context_synchronously
+              updateBlogList(list, provider);
+              provider.setNotificationLoading(false);
+                // navkey.currentState!.pushNamed('/BlogWrap',
+                //     arguments: [0, false, PreloadPageController(), "noti${list.id}", null, true]);
+
+            }
+          }
+        }
+
+        provider.setNotificationLoading(false);
+      } on Exception catch (e) {
+        provider.setNotificationLoading(false);
+
+        if (kDebugMode) {
+          print(e.toString());
+        }
+      }
+    }
+  }
+
+  void updateBlogList(Blog newBlog, AppProvider provider) {
+    var data = provider.allNews!.blogs;
+    provider.allNews!.blogs = [];
+    provider.allNews!.blogs.add(newBlog);
+    if (data.isNotEmpty && data.contains(newBlog)) {
+      data.remove(newBlog);
+    }
+    provider.allNews!.blogs.addAll(data);
+    blogListHolder.clearList();
+    blogListHolder.setList(provider.allNews as DataModel);
+    blogListHolder.setBlogType(BlogType.allnews);
+    provider.updateUI();
+    setState(() {});
   }
 
   @override
@@ -126,8 +269,7 @@ class _BlogWrapPageState extends State<BlogWrapPage>
 
         /// Once an Interstitial Ad has been dismissed and becomes invalidated,
         /// load a fresh Ad by calling this function.
-        if (result == InterstitialAdResult.DISMISSED &&
-            value["invalidated"] == true) {
+        if (result == InterstitialAdResult.DISMISSED && value["invalidated"] == true) {
           _isInterstitialAdLoaded = false;
           _loadInterstitialAd();
         }
@@ -139,9 +281,7 @@ class _BlogWrapPageState extends State<BlogWrapPage>
   void createInterstitialAd() {
     // 'ca-app-pub-3940256099942544/1033173712'
     //  'ca-app-pub-3940256099942544/4411468910'
-    Platform.isAndroid &&
-            allSettings.value.enableAds == '1' &&
-            allSettings.value.admobInterstitialIdAndroid != null
+    Platform.isAndroid && allSettings.value.enableAds == '1' && allSettings.value.admobInterstitialIdAndroid != null
         ? InterstitialAd.load(
             adUnitId: allSettings.value.admobInterstitialIdAndroid ?? '',
             request: const AdRequest(),
@@ -161,9 +301,7 @@ class _BlogWrapPageState extends State<BlogWrapPage>
             ))
         : null;
 
-    Platform.isIOS &&
-            allSettings.value.enableAds == '1' &&
-            allSettings.value.admobInterstitialIdIos != null
+    Platform.isIOS && allSettings.value.enableAds == '1' && allSettings.value.admobInterstitialIdIos != null
         ? InterstitialAd.load(
             adUnitId: allSettings.value.admobInterstitialIdIos ?? '',
             request: const AdRequest(),
@@ -187,6 +325,266 @@ class _BlogWrapPageState extends State<BlogWrapPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    return Consumer<AppProvider>(
+      builder: (BuildContext context, AppProvider provider, Widget? child) {
+        if (provider.showNotificationLoading) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        return widget.isBookmark == false && blogListHolder.getList().blogs.isEmpty
+            ? SizedBox(
+                width: size(context).width,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimationFadeScale(
+                      child: Image.asset(
+                        'assets/images/confuse.png',
+                        width: 100,
+                        height: 100,
+                        color: dark(context) ? ColorUtil.white : ColorUtil.blackGrey,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AnimationFadeSlide(
+                        dx: 0, dy: 0.6, child: Text('Oops!!', style: Theme.of(context).textTheme.displayMedium)),
+                    const SizedBox(height: 12),
+                    AnimationFadeSlide(
+                      dx: 0,
+                      dy: 0.4,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          blogListHolder.blogType == BlogType.feed
+                              ? 'Seems like you have no interests selected. Please refer to page below to select interests'
+                              : 'No post found related to this Category.',
+                          style: Theme.of(context).textTheme.titleMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (blogListHolder.blogType == BlogType.feed)
+                      ElevateButton(
+                          width: 120,
+                          style: const TextStyle(
+                              fontSize: 16, fontFamily: 'Roboto', color: Colors.white, fontWeight: FontWeight.w500),
+                          onTap: currentUser.value.id == null
+                              ? () {
+                                  Navigator.pushNamed(context, '/LoginPage');
+                                  // Navigator.push(context, PagingTransform(widget: NestedSwiperScreen()));
+                                }
+                              : () {
+                                  Navigator.pushNamed(context, '/SaveInterests', arguments: false);
+                                },
+                          text: allMessages.value.myFeed ?? 'My feed')
+                  ],
+                ),
+              )
+            : PreloadPageView.builder(
+                key: ValueKey(widget.isBookmark ? blogListHolder2.getList().total : blogListHolder.getBlogType()),
+                itemCount:
+                    widget.isBookmark ? blogListHolder2.getList().blogs.length : blogListHolder.getList().blogs.length,
+                physics: isWebOpen
+                    ? const NeverScrollableScrollPhysics()
+                    : MediaQuery.of(context).orientation == Orientation.landscape
+                        ? const NeverScrollableScrollPhysics()
+                        : const CustomScrollPhysics2(),
+                controller: widget.preloadPageController,
+                scrollDirection: Axis.vertical,
+                preloadPagesCount: 5,
+                onPageChanged: (value) {
+                  //var url = blogListHolder.getList().nextPageUrl;
+
+                  cur = value;
+                  isWebOpen = false;
+
+                  addFeedLast(provider);
+
+                  if (widget.isBookmark) {
+                    blogListHolder2.setIndex(value);
+                  } else {
+                    blogListHolder.setIndex(value);
+                  }
+
+                  if (widget.isBookmark == false) {
+                    var fb = int.parse(allSettings.value.fbAdsFrequency.toString()) +
+                        int.parse(allSettings.value.admobFrequency.toString());
+
+                    if (_isInterstitialAdLoaded == true &&
+                        allSettings.value.enableFbAds != '0' &&
+                        value % fbAdindex == 0) {
+                      FacebookInterstitialAd.showInterstitialAd();
+                      fbAdindex += fb;
+                      setState(() {});
+                    } else {
+                      debugPrint("Interstial Ad not yet loaded!");
+                    }
+
+                    if (value != 0 &&
+                        value % 9 == 0 &&
+                        blogListHolder.getList().nextPageUrl != null &&
+                        provider.calledPageurl != blogListHolder.getList().lastPageUrl) {
+                      getLatestCategory(nextpageurl: blogListHolder.getList().nextPageUrl ?? '', provider: provider);
+                    }
+
+                    addNewsLast(provider);
+                    addCategoryLast(provider);
+
+                    if (isInterstialLoaded && _interstitialAd != null && value != 0 && value % adindex == 0) {
+                      adindex += int.parse(allSettings.value.admobFrequency!.toString()) * 2;
+                      _interstitialAd!.show();
+                    } else {
+                      _interstitialAd = null;
+                      createInterstitialAd();
+                    }
+                  }
+                  setState(() {});
+                  debugPrint(cur.toString());
+                },
+                itemBuilder: (context, index) {
+                  if (widget.isBookmark) {
+                    return blogListHolder2.getList().blogs[index].postType == PostType.video
+                        ? YouTubeShort(
+                            key: ValueKey(index),
+                            onTap: () {
+                              widget.onChanged(true);
+                            },
+                            model: blogListHolder2.getList().blogs[index])
+                        : blogListHolder2.getList().blogs[index].postType == PostType.quote
+                            ? QuotePage(
+                                model: blogListHolder2.getList().blogs[index],
+                                onTap: () {
+                                  widget.onChanged(true);
+                                },
+                                key: ValueKey(index))
+                            : blogListHolder2.getList().blogs[index].postType == PostType.ads
+                                ? BlogAd(
+                                    model: blogListHolder2.getList().blogs[index],
+                                    onTap: () {
+                                      widget.onChanged(true);
+                                    },
+                                    key: ValueKey(index))
+                                : blogListHolder2.getList().blogs[index].postType == PostType.image
+                                    ? BlogPage(
+                                        key: ValueKey(index),
+                                        isBackAllowed: true,
+                                        index: index,
+                                        currIndex: cur,
+                                        model: blogListHolder2.getList().blogs[index],
+                                      )
+                                    : blogListHolder2.getList().blogs[index].title == 'Last-Bookmark' &&
+                                            blogListHolder2.getList().blogs[index].id == 2345678
+                                        ? LastNewsWidget(
+                                            onBack: () {
+                                              Navigator.pop(context);
+                                            },
+                                            keyword: allMessages.value.mySavedStories,
+                                            isButton: false,
+                                          )
+                                        : const SizedBox();
+                  } else {
+                    return blogListHolder.getList().blogs[index].title == 'Last-Category' ||
+                            blogListHolder.getList().blogs[index].title == 'Last-Feed' ||
+                            blogListHolder.getList().blogs[index].title == 'Last-News'
+                        ? LastNewsWidget(
+                            key: ValueKey(blogListHolder.getList().blogs[index].id),
+                            onBack: widget.isBack
+                                ? () {
+                                    Navigator.pop(context);
+                                  }
+                                : () {
+                                    widget.onChanged(0);
+                                  },
+                            keyword: "${blogListHolder.getList().blogs[index].categoryName} Stories",
+                            onTap: widget.isBack
+                                ? () {
+                                    Navigator.pop(context);
+                                  }
+                                : () {
+                                    blogListHolder.clearList();
+                                    provider.allNews!.blogs = provider.allNewsBlogs;
+                                    blogListHolder.setBlogType(BlogType.allnews);
+                                    blogListHolder.setList(provider.allNews as DataModel);
+                                    // widget.onChanged(0);
+                                    setState(() {});
+                                  },
+                          )
+                        : blogListHolder.getList().blogs[index].title == 'Last-Featured' &&
+                                blogListHolder.getList().blogs[index].id == 2345678876543212345
+                            ? LastNewsWidget(
+                                onBack: () {
+                                  widget.onChanged(0);
+                                },
+                                keyword: allMessages.value.featuredStories,
+                                onTap: () {
+                                  blogListHolder.clearList();
+                                  provider.allNews!.blogs = provider.allNewsBlogs;
+                                  blogListHolder.setList(provider.allNews as DataModel);
+                                  blogListHolder.setBlogType(BlogType.allnews);
+                                  setState(() {});
+                                },
+                              )
+                            : blogListHolder.getList().blogs[index].postType == PostType.video
+                                ? YouTubeShort(
+                                    key: ValueKey(index),
+                                    onTap: widget.isBack
+                                        ? () {
+                                            Navigator.pop(context);
+                                          }
+                                        : () {
+                                            widget.onChanged(true);
+                                          },
+                                    model: blogListHolder.getList().blogs[index])
+                                : blogListHolder.getList().blogs[index].postType == PostType.quote
+                                    ? QuotePage(
+                                        model: blogListHolder.getList().blogs[index],
+                                        type: widget.type,
+                                        onTap: widget.isBack
+                                            ? () {
+                                                Navigator.pop(context);
+                                              }
+                                            : () {
+                                                widget.onChanged(true);
+                                              },
+                                        key: ValueKey(index))
+                                    : blogListHolder.getList().blogs[index].postType == PostType.ads
+                                        ? BlogAd(
+                                            isBack: widget.isBack,
+                                            model: blogListHolder.getList().blogs[index],
+                                            onTap: () {
+                                              widget.onChanged(true);
+                                            },
+                                            key: ValueKey(index))
+                                        : blogListHolder.getList().blogs[index].postType == PostType.image
+                                            ? BlogPage(
+                                                onChanged: (value) {
+                                                  isWebOpen = value;
+                                                  setState(() {});
+                                                },
+                                                type: widget.type,
+                                                onTap: widget.isBack
+                                                    ? null
+                                                    : () {
+                                                        widget.onChanged(false);
+                                                        setState(() {});
+                                                      },
+                                                key: ValueKey("$index${blogListHolder.getBlogType().name.toString()}"),
+                                                isBackAllowed: widget.isBack,
+                                                index: index,
+                                                currIndex: cur,
+                                                model: blogListHolder.getList().blogs[index],
+                                              )
+                                            : const SizedBox();
+                  }
+                },
+              );
+      },
+    );
     var provider = Provider.of<AppProvider>(context, listen: false);
     return widget.isBookmark == false && blogListHolder.getList().blogs.isEmpty
         ? SizedBox(
@@ -200,16 +598,12 @@ class _BlogWrapPageState extends State<BlogWrapPage>
                     'assets/images/confuse.png',
                     width: 100,
                     height: 100,
-                    color:
-                        dark(context) ? ColorUtil.white : ColorUtil.blackGrey,
+                    color: dark(context) ? ColorUtil.white : ColorUtil.blackGrey,
                   ),
                 ),
                 const SizedBox(height: 12),
                 AnimationFadeSlide(
-                    dx: 0,
-                    dy: 0.6,
-                    child: Text('Oops!!',
-                        style: Theme.of(context).textTheme.displayMedium)),
+                    dx: 0, dy: 0.6, child: Text('Oops!!', style: Theme.of(context).textTheme.displayMedium)),
                 const SizedBox(height: 12),
                 AnimationFadeSlide(
                   dx: 0,
@@ -230,30 +624,23 @@ class _BlogWrapPageState extends State<BlogWrapPage>
                   ElevateButton(
                       width: 120,
                       style: const TextStyle(
-                          fontSize: 16,
-                          fontFamily: 'Roboto',
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500),
+                          fontSize: 16, fontFamily: 'Roboto', color: Colors.white, fontWeight: FontWeight.w500),
                       onTap: currentUser.value.id == null
                           ? () {
                               Navigator.pushNamed(context, '/LoginPage');
                               // Navigator.push(context, PagingTransform(widget: NestedSwiperScreen()));
                             }
                           : () {
-                              Navigator.pushNamed(context, '/SaveInterests',
-                                  arguments: false);
+                              Navigator.pushNamed(context, '/SaveInterests', arguments: false);
                             },
                       text: allMessages.value.myFeed ?? 'My feed')
               ],
             ),
           )
         : PreloadPageView.builder(
-            key: ValueKey(widget.isBookmark
-                ? blogListHolder2.getList().total
-                : blogListHolder.getBlogType()),
-            itemCount: widget.isBookmark
-                ? blogListHolder2.getList().blogs.length
-                : blogListHolder.getList().blogs.length,
+            key: ValueKey(widget.isBookmark ? blogListHolder2.getList().total : blogListHolder.getBlogType()),
+            itemCount:
+                widget.isBookmark ? blogListHolder2.getList().blogs.length : blogListHolder.getList().blogs.length,
             physics: isWebOpen
                 ? const NeverScrollableScrollPhysics()
                 : MediaQuery.of(context).orientation == Orientation.landscape
@@ -277,13 +664,10 @@ class _BlogWrapPageState extends State<BlogWrapPage>
               }
 
               if (widget.isBookmark == false) {
-                var fb =
-                    int.parse(allSettings.value.fbAdsFrequency.toString()) +
-                        int.parse(allSettings.value.admobFrequency.toString());
+                var fb = int.parse(allSettings.value.fbAdsFrequency.toString()) +
+                    int.parse(allSettings.value.admobFrequency.toString());
 
-                if (_isInterstitialAdLoaded == true &&
-                    allSettings.value.enableFbAds != '0' &&
-                    value % fbAdindex == 0) {
+                if (_isInterstitialAdLoaded == true && allSettings.value.enableFbAds != '0' && value % fbAdindex == 0) {
                   FacebookInterstitialAd.showInterstitialAd();
                   fbAdindex += fb;
                   setState(() {});
@@ -291,35 +675,18 @@ class _BlogWrapPageState extends State<BlogWrapPage>
                   debugPrint("Interstial Ad not yet loaded!");
                 }
 
-                print(blogListHolder.getList().nextPageUrl);
-                print(provider.calledPageurl);
-                print(blogListHolder.getList().lastPageUrl);
                 if (value != 0 &&
                     value % 9 == 0 &&
                     blogListHolder.getList().nextPageUrl != null &&
-                    provider.calledPageurl !=
-                        blogListHolder.getList().lastPageUrl) {
-                  print('---------- calledPageUrl -------------');
-                  print(provider.calledPageurl);
-                  print(blogListHolder.getList().nextPageUrl);
-
-                  print('---------- LastPageUrl -------------');
-                  print(blogListHolder.getList().lastPageUrl);
-                  getLatestCategory(
-                      nextpageurl: blogListHolder.getList().nextPageUrl ?? '',
-                      provider: provider);
+                    provider.calledPageurl != blogListHolder.getList().lastPageUrl) {
+                  getLatestCategory(nextpageurl: blogListHolder.getList().nextPageUrl ?? '', provider: provider);
                 }
 
                 addNewsLast(provider);
                 addCategoryLast(provider);
 
-                if (isInterstialLoaded &&
-                    _interstitialAd != null &&
-                    value != 0 &&
-                    value % adindex == 0) {
-                  adindex +=
-                      int.parse(allSettings.value.admobFrequency!.toString()) *
-                          2;
+                if (isInterstialLoaded && _interstitialAd != null && value != 0 && value % adindex == 0) {
+                  adindex += int.parse(allSettings.value.admobFrequency!.toString()) * 2;
                   _interstitialAd!.show();
                 } else {
                   _interstitialAd = null;
@@ -331,66 +698,49 @@ class _BlogWrapPageState extends State<BlogWrapPage>
             },
             itemBuilder: (context, index) {
               if (widget.isBookmark) {
-                return blogListHolder2.getList().blogs[index].postType ==
-                        PostType.video
+                return blogListHolder2.getList().blogs[index].postType == PostType.video
                     ? YouTubeShort(
                         key: ValueKey(index),
                         onTap: () {
                           widget.onChanged(true);
                         },
                         model: blogListHolder2.getList().blogs[index])
-                    : blogListHolder2.getList().blogs[index].postType ==
-                            PostType.quote
+                    : blogListHolder2.getList().blogs[index].postType == PostType.quote
                         ? QuotePage(
                             model: blogListHolder2.getList().blogs[index],
                             onTap: () {
                               widget.onChanged(true);
                             },
                             key: ValueKey(index))
-                        : blogListHolder2.getList().blogs[index].postType ==
-                                PostType.ads
+                        : blogListHolder2.getList().blogs[index].postType == PostType.ads
                             ? BlogAd(
                                 model: blogListHolder2.getList().blogs[index],
                                 onTap: () {
                                   widget.onChanged(true);
                                 },
                                 key: ValueKey(index))
-                            : blogListHolder2.getList().blogs[index].postType ==
-                                    PostType.image
+                            : blogListHolder2.getList().blogs[index].postType == PostType.image
                                 ? BlogPage(
                                     key: ValueKey(index),
                                     isBackAllowed: true,
                                     index: index,
                                     currIndex: cur,
-                                    model:
-                                        blogListHolder2.getList().blogs[index],
+                                    model: blogListHolder2.getList().blogs[index],
                                   )
-                                : blogListHolder2
-                                                .getList()
-                                                .blogs[index]
-                                                .title ==
-                                            'Last-Bookmark' &&
-                                        blogListHolder2
-                                                .getList()
-                                                .blogs[index]
-                                                .id ==
-                                            2345678
+                                : blogListHolder2.getList().blogs[index].title == 'Last-Bookmark' &&
+                                        blogListHolder2.getList().blogs[index].id == 2345678
                                     ? LastNewsWidget(
                                         onBack: () {
                                           Navigator.pop(context);
                                         },
-                                        keyword:
-                                            allMessages.value.mySavedStories,
+                                        keyword: allMessages.value.mySavedStories,
                                         isButton: false,
                                       )
                                     : const SizedBox();
               } else {
-                return blogListHolder.getList().blogs[index].title ==
-                            'Last-Category' ||
-                        blogListHolder.getList().blogs[index].title ==
-                            'Last-Feed' ||
-                        blogListHolder.getList().blogs[index].title ==
-                            'Last-News'
+                return blogListHolder.getList().blogs[index].title == 'Last-Category' ||
+                        blogListHolder.getList().blogs[index].title == 'Last-Feed' ||
+                        blogListHolder.getList().blogs[index].title == 'Last-News'
                     ? LastNewsWidget(
                         key: ValueKey(blogListHolder.getList().blogs[index].id),
                         onBack: widget.isBack
@@ -400,8 +750,7 @@ class _BlogWrapPageState extends State<BlogWrapPage>
                             : () {
                                 widget.onChanged(0);
                               },
-                        keyword:
-                            "${blogListHolder.getList().blogs[index].categoryName} Stories",
+                        keyword: "${blogListHolder.getList().blogs[index].categoryName} Stories",
                         onTap: widget.isBack
                             ? () {
                                 Navigator.pop(context);
@@ -410,16 +759,13 @@ class _BlogWrapPageState extends State<BlogWrapPage>
                                 blogListHolder.clearList();
                                 provider.allNews!.blogs = provider.allNewsBlogs;
                                 blogListHolder.setBlogType(BlogType.allnews);
-                                blogListHolder
-                                    .setList(provider.allNews as DataModel);
+                                blogListHolder.setList(provider.allNews as DataModel);
                                 // widget.onChanged(0);
                                 setState(() {});
                               },
                       )
-                    : blogListHolder.getList().blogs[index].title ==
-                                'Last-Featured' &&
-                            blogListHolder.getList().blogs[index].id ==
-                                2345678876543212345
+                    : blogListHolder.getList().blogs[index].title == 'Last-Featured' &&
+                            blogListHolder.getList().blogs[index].id == 2345678876543212345
                         ? LastNewsWidget(
                             onBack: () {
                               widget.onChanged(0);
@@ -428,14 +774,12 @@ class _BlogWrapPageState extends State<BlogWrapPage>
                             onTap: () {
                               blogListHolder.clearList();
                               provider.allNews!.blogs = provider.allNewsBlogs;
-                              blogListHolder
-                                  .setList(provider.allNews as DataModel);
+                              blogListHolder.setList(provider.allNews as DataModel);
                               blogListHolder.setBlogType(BlogType.allnews);
                               setState(() {});
                             },
                           )
-                        : blogListHolder.getList().blogs[index].postType ==
-                                PostType.video
+                        : blogListHolder.getList().blogs[index].postType == PostType.video
                             ? YouTubeShort(
                                 key: ValueKey(index),
                                 onTap: widget.isBack
@@ -446,11 +790,9 @@ class _BlogWrapPageState extends State<BlogWrapPage>
                                         widget.onChanged(true);
                                       },
                                 model: blogListHolder.getList().blogs[index])
-                            : blogListHolder.getList().blogs[index].postType ==
-                                    PostType.quote
+                            : blogListHolder.getList().blogs[index].postType == PostType.quote
                                 ? QuotePage(
-                                    model:
-                                        blogListHolder.getList().blogs[index],
+                                    model: blogListHolder.getList().blogs[index],
                                     type: widget.type,
                                     onTap: widget.isBack
                                         ? () {
@@ -460,25 +802,15 @@ class _BlogWrapPageState extends State<BlogWrapPage>
                                             widget.onChanged(true);
                                           },
                                     key: ValueKey(index))
-                                : blogListHolder
-                                            .getList()
-                                            .blogs[index]
-                                            .postType ==
-                                        PostType.ads
+                                : blogListHolder.getList().blogs[index].postType == PostType.ads
                                     ? BlogAd(
                                         isBack: widget.isBack,
-                                        model: blogListHolder
-                                            .getList()
-                                            .blogs[index],
+                                        model: blogListHolder.getList().blogs[index],
                                         onTap: () {
                                           widget.onChanged(true);
                                         },
                                         key: ValueKey(index))
-                                    : blogListHolder
-                                                .getList()
-                                                .blogs[index]
-                                                .postType ==
-                                            PostType.image
+                                    : blogListHolder.getList().blogs[index].postType == PostType.image
                                         ? BlogPage(
                                             onChanged: (value) {
                                               isWebOpen = value;
@@ -491,14 +823,11 @@ class _BlogWrapPageState extends State<BlogWrapPage>
                                                     widget.onChanged(false);
                                                     setState(() {});
                                                   },
-                                            key: ValueKey(
-                                                "$index${blogListHolder.getBlogType().name.toString()}"),
+                                            key: ValueKey("$index${blogListHolder.getBlogType().name.toString()}"),
                                             isBackAllowed: widget.isBack,
                                             index: index,
                                             currIndex: cur,
-                                            model: blogListHolder
-                                                .getList()
-                                                .blogs[index],
+                                            model: blogListHolder.getList().blogs[index],
                                           )
                                         : const SizedBox();
               }
@@ -530,24 +859,15 @@ class _BlogWrapPageState extends State<BlogWrapPage>
       if (nextpageurl != null) {
         for (var i = 0; i < anotherBlog.categories!.length; i++) {
           //for (var i = 0; i < _blog.; i++) {
-          _blog!.categories![i].data!.currentPage =
-              anotherBlog.categories![i].data!.currentPage;
-          _blog.categories![i].data!.firstPageUrl =
-              anotherBlog.categories![i].data!.firstPageUrl;
-          _blog.categories![i].data!.lastPageUrl =
-              anotherBlog.categories![i].data!.lastPageUrl;
-          _blog.categories![i].data!.nextPageUrl =
-              anotherBlog.categories![i].data!.nextPageUrl;
-          _blog.categories![i].data!.to =
-              anotherBlog.categories![i].data!.currentPage;
-          _blog.categories![i].data!.prevPageUrl =
-              anotherBlog.categories![i].data!.prevPageUrl;
-          _blog.categories![i].data!.lastPage =
-              anotherBlog.categories![i].data!.currentPage;
-          _blog.categories![i].data!.from =
-              anotherBlog.categories![i].data!.currentPage;
-          _blog.categories![i].data!.blogs
-              .addAll(anotherBlog.categories![i].data!.blogs);
+          _blog!.categories![i].data!.currentPage = anotherBlog.categories![i].data!.currentPage;
+          _blog.categories![i].data!.firstPageUrl = anotherBlog.categories![i].data!.firstPageUrl;
+          _blog.categories![i].data!.lastPageUrl = anotherBlog.categories![i].data!.lastPageUrl;
+          _blog.categories![i].data!.nextPageUrl = anotherBlog.categories![i].data!.nextPageUrl;
+          _blog.categories![i].data!.to = anotherBlog.categories![i].data!.currentPage;
+          _blog.categories![i].data!.prevPageUrl = anotherBlog.categories![i].data!.prevPageUrl;
+          _blog.categories![i].data!.lastPage = anotherBlog.categories![i].data!.currentPage;
+          _blog.categories![i].data!.from = anotherBlog.categories![i].data!.currentPage;
+          _blog.categories![i].data!.blogs.addAll(anotherBlog.categories![i].data!.blogs);
 
           // }
         }
@@ -565,27 +885,20 @@ class _BlogWrapPageState extends State<BlogWrapPage>
           //     provider.selectedFeed.add(anotherBlog.categories![i].id);
           //  }
 
-          for (var j = 0;
-              j < anotherBlog.categories![i].data!.blogs.length;
-              j++) {
+          for (var j = 0; j < anotherBlog.categories![i].data!.blogs.length; j++) {
             if (anotherBlog.categories![i].isFeed == true) {
-              if (!provider.feedBlogs
-                  .contains(anotherBlog.categories![i].data!.blogs[j])) {
+              if (!provider.feedBlogs.contains(anotherBlog.categories![i].data!.blogs[j])) {
                 feedBlogs.add(anotherBlog.categories![i].data!.blogs[j]);
               }
             }
 
-            if (anotherBlog.categories![i].data!.blogs[j].isFeatured == 1 &&
-                provider.featureBlogs.length != 11) {
-              if (!provider.featureBlogs
-                  .contains(anotherBlog.categories![i].data!.blogs[j])) {
-                provider.featureBlogs
-                    .add(anotherBlog.categories![i].data!.blogs[j]);
+            if (anotherBlog.categories![i].data!.blogs[j].isFeatured == 1 && provider.featureBlogs.length != 11) {
+              if (!provider.featureBlogs.contains(anotherBlog.categories![i].data!.blogs[j])) {
+                provider.featureBlogs.add(anotherBlog.categories![i].data!.blogs[j]);
               }
             }
 
-            if (!provider.allNewsBlogs
-                .contains(anotherBlog.categories![i].data!.blogs[j])) {
+            if (!provider.allNewsBlogs.contains(anotherBlog.categories![i].data!.blogs[j])) {
               allNewsBlogs.add(anotherBlog.categories![i].data!.blogs[j]);
             }
           }
@@ -593,12 +906,10 @@ class _BlogWrapPageState extends State<BlogWrapPage>
         provider.setCalledUrl(nextpageurl);
 
         allNewsBlogs.sort((a, b) {
-          return DateTime.parse(b.scheduleDate.toString())
-              .compareTo(DateTime.parse(a.scheduleDate.toString()));
+          return DateTime.parse(b.scheduleDate.toString()).compareTo(DateTime.parse(a.scheduleDate.toString()));
         });
         feedBlogs.sort((a, b) {
-          return DateTime.parse(b.scheduleDate.toString())
-              .compareTo(DateTime.parse(a.scheduleDate.toString()));
+          return DateTime.parse(b.scheduleDate.toString()).compareTo(DateTime.parse(a.scheduleDate.toString()));
         });
         //
         if (blogAds.value.isNotEmpty) {
@@ -636,8 +947,7 @@ class _BlogWrapPageState extends State<BlogWrapPage>
         } else if (blogListHolder.getBlogType() == BlogType.allnews) {
           blogListHolder.updateList(allNews);
         } else {
-          blogListHolder.updateList(provider
-              .blog!.categories![provider.categoryIndex].data as DataModel);
+          blogListHolder.updateList(provider.blog!.categories![provider.categoryIndex].data as DataModel);
         }
 
         provider.setCategoryBlog(_blog);
@@ -645,22 +955,17 @@ class _BlogWrapPageState extends State<BlogWrapPage>
         provider.setMyFeed(load: feed);
       }
     } on SocketException {
-      showCustomToast(context,
-          allMessages.value.noInternetConnection ?? 'No Internet Connection');
+      showCustomToast(context, allMessages.value.noInternetConnection ?? 'No Internet Connection');
     } catch (e) {
     } finally {}
   }
 
   void addCategoryLast(AppProvider provider) {
-    if (provider.calledPageurl ==
-            provider
-                .blog!.categories![provider.categoryIndex].data!.lastPageUrl &&
-        !provider.blog!.categories![provider.categoryIndex].data!.blogs
-            .contains(Blog(
-                categoryName:
-                    provider.blog!.categories![provider.categoryIndex].name,
-                id: provider.blog!.categories![provider.categoryIndex].id,
-                title: 'Last-Category'))) {
+    if (provider.calledPageurl == provider.blog!.categories![provider.categoryIndex].data!.lastPageUrl &&
+        !provider.blog!.categories![provider.categoryIndex].data!.blogs.contains(Blog(
+            categoryName: provider.blog!.categories![provider.categoryIndex].name,
+            id: provider.blog!.categories![provider.categoryIndex].id,
+            title: 'Last-Category'))) {
       provider.blog!.categories![provider.categoryIndex].data!.blogs.add(Blog(
         categoryName: provider.blog!.categories![provider.categoryIndex].name,
         id: provider.blog!.categories![provider.categoryIndex].id,
@@ -714,7 +1019,6 @@ class _BlogWrapPageState extends State<BlogWrapPage>
                 id: 234202120,
                 sourceName: 'Great',
               ))) {
-        print('adding feed');
         blogListHolder.getList().blogs.add(Blog(
               title: 'Last-Feed',
               categoryName: "My Feed",
